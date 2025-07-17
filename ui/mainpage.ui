@@ -1,93 +1,97 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <ui version="4.0">
- <class>WelcomeForm</class>
- <widget class="QWidget" name="WelcomeForm">
-  <property name="geometry">
-   <rect>
-    <x>0</x>
-    <y>0</y>
-    <width>400</width>
-    <height>300</height>
-   </rect>
-  </property>
-  <property name="windowTitle">
-   <string>خوش آمدید</string>
-  </property>
-  <property name="styleSheet">
-   <string notr="true">
-QWidget {
-    background-color: qlineargradient(spread:pad, x1:0, y1:0, x2:1, y2:1,
-        stop:0 #3498db, stop:1 #6dd5fa);
-    color: white;
-    font-family: "Vazir", "IranSans", "Tahoma";
-    font-size: 14px;
-}
-QPushButton {
-    background-color: #ffffff;
-    color: #3498db;
-    border: 2px solid #3498db;
-    border-radius: 10px;
-    padding: 6px 12px;
-    font-weight: bold;
-    font-size: 14px;
-}
-QPushButton:hover {
-    background-color: #ecf6fc;
-    border-color: #2980b9;
-    color: #2980b9;
-}
-QLabel {
-    font-size: 16px;
-    font-weight: bold;
-}
-   </string>
-  </property>
-  <layout class="QVBoxLayout" name="mainLayout">
-   <item>
-    <widget class="QLabel" name="label">
-     <property name="text">
-      <string>به نرم‌افزار حسابداری شخصی خوش آمدید</string>
-     </property>
-     <property name="alignment">
-      <set>Qt::AlignCenter</set>
-     </property>
+    <class>Form</class>
+    <widget class="QWidget" name="Form">
+        <property name="geometry">
+            <rect>
+                <x>0</x>
+                <y>0</y>
+                <width>318</width>
+                <height>319</height>
+            </rect>
+        </property>
+        <property name="windowTitle">
+            <string>welcome</string>
+        </property>
+        <property name="styleSheet">
+            <string notr="true">QWidget { background-color: rgb(0, 92, 137); color: white } </string>
+        </property>
+        <widget class="QLabel" name="label">
+            <property name="geometry">
+                <rect>
+                    <x>20</x>
+                    <y>50</y>
+                    <width>271</width>
+                    <height>31</height>
+                </rect>
+            </property>
+            <property name="font">
+                <font>
+                    <family>.AppleSystemUIFont</family>
+                    <pointsize>16</pointsize>
+                    <weight>50</weight>
+                    <italic>false</italic>
+                    <bold>false</bold>
+                </font>
+            </property>
+            <property name="styleSheet">
+                <string notr="true">font: 16pt &quot;.AppleSystemUIFont&quot;;</string>
+            </property>
+            <property name="text">
+                <string>به نرم افزار حسابداری شخصی خوش آمدید</string>
+            </property>
+        </widget>
+        <widget class="QPushButton" name="signinbutton">
+            <property name="geometry">
+                <rect>
+                    <x>100</x>
+                    <y>130</y>
+                    <width>121</width>
+                    <height>41</height>
+                </rect>
+            </property>
+            <property name="font">
+                <font>
+                    <family>.AppleSystemUIFont</family>
+                    <pointsize>16</pointsize>
+                    <weight>75</weight>
+                    <italic>false</italic>
+                    <bold>true</bold>
+                </font>
+            </property>
+            <property name="styleSheet">
+                <string notr="true">QPushButton { font: 16pt &quot;.AppleSystemUIFont&quot;; background-color:rgb(109, 171, 231); color: white; border-radius: 6px; padding: 6px 12px; font-weight: bold; } QPushButton:hover { background-color: rgb(109, 160, 200); } </string>
+            </property>
+            <property name="text">
+                <string>ورود</string>
+            </property>
+        </widget>
+        <widget class="QPushButton" name="signupbutton">
+            <property name="geometry">
+                <rect>
+                    <x>100</x>
+                    <y>200</y>
+                    <width>121</width>
+                    <height>41</height>
+                </rect>
+            </property>
+            <property name="font">
+                <font>
+                    <family>.AppleSystemUIFont</family>
+                    <pointsize>16</pointsize>
+                    <weight>75</weight>
+                    <italic>false</italic>
+                    <bold>true</bold>
+                </font>
+            </property>
+            <property name="styleSheet">
+                <string notr="true">QPushButton { font: 16pt &quot;.AppleSystemUIFont&quot;; background-color:rgb(109, 171, 231); color: white; border-radius: 6px; padding: 6px 12px; font-weight: bold; } QPushButton:hover { background-color: rgb(109, 160, 200); } </string>
+            </property>
+            <property name="text">
+                <string>ثبت نام</string>
+            </property>
+        </widget>
     </widget>
-   </item>
-   <item>
-    <layout class="QVBoxLayout" name="buttonLayout">
-     <property name="spacing">
-      <number>16</number>
-     </property>
-     <item>
-      <widget class="QPushButton" name="signinButton">
-       <property name="text">
-        <string>ورود</string>
-       </property>
-       <property name="minimumSize">
-        <size>
-         <width>140</width>
-         <height>40</height>
-        </size>
-       </property>
-      </widget>
-     </item>
-     <item>
-      <widget class="QPushButton" name="signupButton">
-       <property name="text">
-        <string>ثبت نام</string>
-       </property>
-       <property name="minimumSize">
-        <size>
-         <width>140</width>
-         <height>40</height>
-        </size>
-       </property>
-      </widget>
-     </item>
-    </layout>
-   </item>
-  </layout>
- </widget>
- <resources/>
- <connections/>
+    <resources/>
+    <connections/>
 </ui>
