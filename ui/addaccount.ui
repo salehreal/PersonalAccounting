@@ -176,7 +176,15 @@ QPushButton:hover {
     </rect>
    </property>
    <property name="styleSheet">
-    <string notr="true">font: 16pt &quot;.AppleSystemUIFont&quot;;</string>
+    <string notr="true">
+QLabel {
+    background-color: rgba(0, 0, 0, 0);
+    border: none;
+    color: white;
+    font: 16pt &quot;.AppleSystemUIFont&quot;;
+}
+
+</string>
    </property>
    <property name="text">
     <string>نام حساب:</string>
@@ -192,7 +200,15 @@ QPushButton:hover {
     </rect>
    </property>
    <property name="styleSheet">
-    <string notr="true">font: 16pt &quot;.AppleSystemUIFont&quot;;</string>
+    <string notr="true">
+QLabel {
+    background-color: rgba(0, 0, 0, 0);
+    border: none;
+    color: white;
+    font: 16pt &quot;.AppleSystemUIFont&quot;;
+}
+
+</string>
    </property>
    <property name="text">
     <string>حساب بانکی خود را ثبت کنید</string>

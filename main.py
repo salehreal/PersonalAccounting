@@ -1,9 +1,9 @@
-from PyQt5.QtWidgets import QApplication, QWidget, QComboBox, QInputDialog, QMessageBox, QTableWidgetItem, QVBoxLayout, QLabel
+from PyQt5.QtWidgets import QApplication, QWidget, QComboBox, QInputDialog, QMessageBox, QTableWidgetItem, QVBoxLayout, QLabel, QListWidgetItem
 from PyQt5.uic import loadUi
 from sms import send_sms
 from PyQt5.QtCore import QTimer, QDate, Qt
 from PyQt5.QtChart import QChart, QChartView, QPieSeries
-from PyQt5.QtGui import QPainter
+from PyQt5.QtGui import QPainter, QPixmap
 from datetime import datetime, timedelta
 from dbfunctions import get_user_fullname, get_user_id_by_phone
 import sys
@@ -14,6 +14,31 @@ import jdatetime
 from datetime import date
 from PyQt5.QtChart import QChart, QChartView, QPieSeries
 
+
+def fa_to_en(text):
+    fa_digits = '۰۱۲۳۴۵۶۷۸۹'
+    en_digits = '0123456789'
+    return text.translate(str.maketrans(fa_digits, en_digits))
+
+def show_messagebox(parent, title, text, icon=QMessageBox.Information):
+    msg = QMessageBox(parent)
+    msg.setWindowTitle(title)
+    msg.setText(text)
+    msg.setIcon(icon)
+    msg.setStyleSheet("""
+        QMessageBox {
+            background-color: rgb(0, 92, 137); color: white;
+            font-size: 15px;
+        }
+        QPushButton {
+            font: 16pt ".AppleSystemUIFont"; background-color:rgb(109, 171, 231); color: white; border-radius: 6px; padding: 6px 12px; font-weight: bold; 
+        }
+        QPushButton:hover {
+            background-color: rgb(109, 160, 200);
+        }
+    """)
+    msg.exec_()
+
 dbfunctions.create_tables()
 
 
@@ -21,9 +46,10 @@ class Main(QWidget):
     def __init__(self):
         super().__init__()
         loadUi('./ui/mainpage.ui', self)
+
         self.signinbutton.clicked.connect(self.ShowSignInPage)
         self.signupbutton.clicked.connect(self.ShowSignUpPage)
-
+        
     def ShowSignInPage(self):
         window2.show()
         self.close()
@@ -142,22 +168,26 @@ class OtpPage(QWidget):
         self.resendbutton.clicked.connect(self.resend_code)
         self.backbutton.clicked.connect(self.go_back)
 
+    def fa_to_en(self, text):
+        fa_digits = '۰۱۲۳۴۵۶۷۸۹'
+        en_digits = '0123456789'
+        return text.translate(str.maketrans(fa_digits, en_digits))
+
     def set_otp(self, signup_page):
         self.signup_page = signup_page
         self.send_new_code()
         self.start_resend_timer()
-
 
     def send_new_code(self):
         self.generated_code = str(random.randint(1000, 9999))
         self.generated_time = datetime.now()
         phone = self.signup_page.phonelineedit.text()
         success = send_sms(phone, self.generated_code)
+
         if success:
             self.messageLabel.setText("کد تایید برای شما ارسال شد. لطفا آن را وارد نمایید")
         else:
-            self.messageLabel.setText("❌ ارسال ناموفق")
-
+            self.messageLabel.setText(" ارسال ناموفق بود ")
 
     def start_resend_timer(self):
         self.resendbutton.setEnabled(False)
@@ -179,7 +209,8 @@ class OtpPage(QWidget):
         self.start_resend_timer()
 
     def verify_code(self):
-        entered = self.otplineedit.text()
+        entered = self.otplineedit.text().strip()
+        entered = self.fa_to_en(entered)
 
         if datetime.now() - self.generated_time > timedelta(minutes=2):
             self.confirmbutton.setText("⏰ کد منقضی شده")
@@ -191,6 +222,14 @@ class OtpPage(QWidget):
 
             insert_user(user['fullname'], user['password'], user['phone'])
             user_id = get_user_id_by_phone(user['phone'])
+            # اطمینان از اینکه user_id مقدار عددی است
+            if isinstance(user_id, (list, tuple)):
+                user_id = user_id[0]
+            try:
+                user_id = int(user_id)
+            except Exception:
+                show_messagebox(self, "خطا", "شناسه کاربر نامعتبر است!", QMessageBox.Warning)
+                return
 
             self.confirmbutton.setText("✅ تأیید شد")
             global window5
@@ -206,11 +245,18 @@ class OtpPage(QWidget):
 
 
 class WorkPage(QWidget):
-    def __init__(self, id):
+    def __init__(self, user_id):
         super().__init__()
         loadUi("./ui/workpage.ui", self)
 
-        fullname = get_user_fullname(id)
+        # اطمینان از اینکه user_id مقدار عددی معتبر است
+        try:
+            user_id = int(user_id)
+        except Exception:
+            show_messagebox(self, "خطا", "شناسه کاربر نامعتبر است!", QMessageBox.Warning)
+            user_id = None
+
+        fullname = get_user_fullname(user_id) if user_id is not None else "--"
         self.fullnamelabel.setText(f"سلام {fullname} عزیز!")
 
         self.ConfirmEventButton.clicked.connect(self.ShowIncomePage)
@@ -249,12 +295,12 @@ class AddEventPage(QWidget):
         self.typeComboBox.addItems(['درآمد', 'هزینه'])
 
         self.typeComboBox.currentIndexChanged.connect(self.update_category_combo)
+        self.ConfirmEventButton.clicked.connect(self.save_event)
+        self.backbutton.clicked.connect(self.close)
+        self.CostLineEdit.textChanged.connect(self.format_amount)
 
         self.update_category_combo()
         self.load_accounts()
-
-        self.ConfirmEventButton.clicked.connect(self.save_event)
-        self.backbutton.clicked.connect(self.close)
 
     def fa_to_en(self, text):
         fa_digits = '۰۱۲۳۴۵۶۷۸۹'
@@ -268,6 +314,17 @@ class AddEventPage(QWidget):
             return True
         except:
             return False
+
+    def format_amount(self, text):
+        raw = self.fa_to_en(text).replace(",", "")
+        if raw.isdigit():
+            formatted = "{:,}".format(int(raw))
+            cursor_pos = self.CostLineEdit.cursorPosition()
+            self.CostLineEdit.blockSignals(True)
+            self.CostLineEdit.setText(formatted)
+            self.CostLineEdit.blockSignals(False)
+            delta = len(formatted) - len(raw)
+            self.CostLineEdit.setCursorPosition(cursor_pos + delta)
 
     def update_category_combo(self):
         selected_type = self.typeComboBox.currentText().strip()
@@ -294,7 +351,7 @@ class AddEventPage(QWidget):
             self.accountComboBox.addItem(row[0])
 
     def save_event(self):
-        amount = self.fa_to_en(self.CostLineEdit.text().strip())
+        amount = self.fa_to_en(self.CostLineEdit.text().replace(",", "").strip())
         type_value = self.typeComboBox.currentText().strip()
         category_name = self.categoryComboBox.currentText().strip()
         account_name = self.accountComboBox.currentText().strip()
@@ -302,15 +359,15 @@ class AddEventPage(QWidget):
         description = self.textEdit.toPlainText().strip()
 
         if not all([amount, type_value, category_name, account_name, date_text]):
-            QMessageBox.warning(self, 'خطا', 'لطفاً همه فیلدهای اجباری را پر کنید')
+            show_messagebox(self, 'خطا', 'لطفاً همه فیلدهای اجباری را پر کنید', QMessageBox.Warning)
             return
 
         if not self.is_valid_jalali_date(date_text):
-            QMessageBox.warning(self, 'خطا', 'فرمت تاریخ نامعتبر است. مانند: ۱۴۰۴/۰۴/۲۵')
+            show_messagebox(self, 'خطا', 'فرمت تاریخ نامعتبر است. مانند: ۱۴۰۴/۰۴/۲۵', QMessageBox.Warning)
             return
 
         if not amount.isdigit():
-            QMessageBox.warning(self, 'خطا', 'مبلغ باید فقط شامل عدد باشد')
+            show_messagebox(self, 'خطا', 'مبلغ باید فقط شامل عدد باشد', QMessageBox.Warning)
             return
 
         db_type = 'income' if type_value == 'درآمد' else 'expense'
@@ -338,7 +395,7 @@ class AddEventPage(QWidget):
         conn.commit()
         conn.close()
 
-        QMessageBox.information(self, 'ثبت شد', '✅ رویداد با موفقیت ثبت شد')
+        show_messagebox(self, 'ثبت شد', '✅ رویداد با موفقیت ثبت شد', QMessageBox.Information)
         self.close()
 
 
@@ -362,12 +419,14 @@ class AddAccountPage(QWidget):
         conn.close()
 
         for row in rows:
-            self.accountListWidget.addItem(row[0])
+            item = QListWidgetItem(row[0])
+            item.setTextAlignment(Qt.AlignRight)
+            self.accountListWidget.addItem(item)
 
     def add_account(self):
         name = self.accountLineEdit.text().strip()
         if not name:
-            QMessageBox.warning(self, "⚠️ خطا", "لطفاً نام حساب را وارد کنید")
+            show_messagebox(self, "⚠️ خطا", "لطفاً نام حساب را وارد کنید", QMessageBox.Warning)
             return
 
         conn = dbfunctions.connect()
@@ -376,11 +435,11 @@ class AddAccountPage(QWidget):
         result = cursor.fetchone()
 
         if result:
-            QMessageBox.information(self, "ℹ️", "این حساب قبلاً ثبت شده است")
+            show_messagebox(self, "ℹ️", "این حساب قبلاً ثبت شده است", QMessageBox.Information)
         else:
             cursor.execute("INSERT INTO accounts (name) VALUES (?)", (name,))
             conn.commit()
-            QMessageBox.information(self, "✅ ثبت شد", "حساب جدید با موفقیت اضافه شد")
+            show_messagebox(self, "✅ ثبت شد", "حساب جدید با موفقیت اضافه شد", QMessageBox.Information)
             self.accountLineEdit.clear()
             self.load_accounts()
 
@@ -389,22 +448,27 @@ class AddAccountPage(QWidget):
     def delete_account(self):
         selected_item = self.accountListWidget.currentItem()
         if not selected_item:
-            QMessageBox.warning(self, "⚠️ خطا", "لطفاً یک حساب را برای حذف انتخاب کنید")
+            show_messagebox(self, "⚠️ خطا", "لطفاً یک حساب را برای حذف انتخاب کنید", QMessageBox.Warning)
             return
 
         account_name = selected_item.text()
 
         conn = dbfunctions.connect()
         cursor = conn.cursor()
-        cursor.execute("SELECT COUNT(*) FROM transactions WHERE account_id IN (SELECT id FROM accounts WHERE name = ?)", (account_name,))
+        cursor.execute("""
+            SELECT COUNT(*) FROM transactions
+            WHERE account_id IN (
+                SELECT id FROM accounts WHERE name = ?
+            )
+        """, (account_name,))
         count = cursor.fetchone()[0]
 
         if count > 0:
-            QMessageBox.warning(self, "⛔ امکان حذف نیست", "این حساب در تراکنش‌ها استفاده شده و قابل حذف نیست")
+            show_messagebox(self, "⛔ امکان حذف نیست", "این حساب در تراکنش‌ها استفاده شده و قابل حذف نیست", QMessageBox.Warning)
         else:
             cursor.execute("DELETE FROM accounts WHERE name = ?", (account_name,))
             conn.commit()
-            QMessageBox.information(self, "🗑️ حذف شد", "حساب با موفقیت حذف شد")
+            show_messagebox(self, "🗑️ حذف شد", "حساب با موفقیت حذف شد", QMessageBox.Information)
             self.load_accounts()
 
         conn.close()
@@ -446,11 +510,11 @@ class FinancialReportPage(QWidget):
         to_date = self.fa_to_en(self.toLineEdit.text().strip())
 
         if not from_date or not to_date:
-            QMessageBox.warning(self, "⚠️ خطا", "لطفاً بازه زمانی را کامل وارد کنید")
+            show_messagebox(self, "⚠️ خطا", "لطفاً بازه زمانی را کامل وارد کنید", QMessageBox.Warning)
             return
 
         if not self.is_valid_jalali_date(from_date) or not self.is_valid_jalali_date(to_date):
-            QMessageBox.warning(self, "⚠️ خطا", "تاریخ واردشده معتبر نیست. لطفاً مانند ۱۴۰۴/۰۴/۲۵ وارد کنید")
+            show_messagebox(self, "⚠️ خطا", "تاریخ واردشده معتبر نیست. لطفاً مانند ۱۴۰۴/۰۴/۲۵ وارد کنید", QMessageBox.Warning)
             return
 
         conn = dbfunctions.connect()
@@ -612,3 +676,4 @@ if __name__ == '__main__':
     window4 = OtpPage()
     window1.show()
     sys.exit(app.exec())
+    

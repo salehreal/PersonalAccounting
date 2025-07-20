@@ -30,7 +30,15 @@
     </rect>
    </property>
    <property name="styleSheet">
-    <string notr="true">font: 16pt &quot;.AppleSystemUIFont&quot;;</string>
+    <string notr="true">
+QLabel {
+    background-color: rgba(0, 0, 0, 0);
+    border: none;
+    color: white;
+    font: 16pt &quot;.AppleSystemUIFont&quot;;
+}
+
+</string>
    </property>
    <property name="text">
     <string>رویداد مالی خود را ثبت کنید</string>
@@ -73,7 +81,15 @@ QLineEdit:focus {
     </rect>
    </property>
    <property name="styleSheet">
-    <string notr="true">font: 16pt &quot;.AppleSystemUIFont&quot;;</string>
+    <string notr="true">
+QLabel {
+    background-color: rgba(0, 0, 0, 0);
+    border: none;
+    color: white;
+    font: 16pt &quot;.AppleSystemUIFont&quot;;
+}
+
+</string>
    </property>
    <property name="text">
     <string>مبلغ (ریال):</string>
@@ -130,7 +146,15 @@ QComboBox::down-arrow {
     </rect>
    </property>
    <property name="styleSheet">
-    <string notr="true">font: 16pt &quot;.AppleSystemUIFont&quot;;</string>
+    <string notr="true">
+QLabel {
+    background-color: rgba(0, 0, 0, 0);
+    border: none;
+    color: white;
+    font: 16pt &quot;.AppleSystemUIFont&quot;;
+}
+
+</string>
    </property>
    <property name="text">
     <string>حساب بانکی:</string>
@@ -146,7 +170,15 @@ QComboBox::down-arrow {
     </rect>
    </property>
    <property name="styleSheet">
-    <string notr="true">font: 16pt &quot;.AppleSystemUIFont&quot;;</string>
+    <string notr="true">
+QLabel {
+    background-color: rgba(0, 0, 0, 0);
+    border: none;
+    color: white;
+    font: 16pt &quot;.AppleSystemUIFont&quot;;
+}
+
+</string>
    </property>
    <property name="text">
     <string>تاریخ:</string>
@@ -162,7 +194,15 @@ QComboBox::down-arrow {
     </rect>
    </property>
    <property name="styleSheet">
-    <string notr="true">font: 16pt &quot;.AppleSystemUIFont&quot;;</string>
+    <string notr="true">
+QLabel {
+    background-color: rgba(0, 0, 0, 0);
+    border: none;
+    color: white;
+    font: 16pt &quot;.AppleSystemUIFont&quot;;
+}
+
+</string>
    </property>
    <property name="text">
     <string>توضیحات (اختیاری):</string>
@@ -296,7 +336,15 @@ QLineEdit:focus {
     </rect>
    </property>
    <property name="styleSheet">
-    <string notr="true">font: 16pt &quot;.AppleSystemUIFont&quot;;</string>
+    <string notr="true">
+QLabel {
+    background-color: rgba(0, 0, 0, 0);
+    border: none;
+    color: white;
+    font: 16pt &quot;.AppleSystemUIFont&quot;;
+}
+
+</string>
    </property>
    <property name="text">
     <string>نوع رویداد:</string>
@@ -359,7 +407,15 @@ QComboBox::down-arrow {
     </rect>
    </property>
    <property name="styleSheet">
-    <string notr="true">font: 16pt &quot;.AppleSystemUIFont&quot;;</string>
+    <string notr="true">
+QLabel {
+    background-color: rgba(0, 0, 0, 0);
+    border: none;
+    color: white;
+    font: 16pt &quot;.AppleSystemUIFont&quot;;
+}
+
+</string>
    </property>
    <property name="text">
     <string>دسته بندی:</string>

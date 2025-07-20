@@ -284,6 +284,17 @@ QPushButton:hover {
      <height>20</height>
     </rect>
    </property>
+   <property name="styleSheet">
+    <string notr="true">
+QLabel {
+    background-color: rgba(0, 0, 0, 0);
+    border: none;
+    color: white;
+    font: 16pt &quot;.AppleSystemUIFont&quot;;
+}
+
+</string>
+   </property>
    <property name="text">
     <string/>
    </property>
