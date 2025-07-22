@@ -1,4 +1,4 @@
-from PyQt5.QtWidgets import QApplication, QWidget, QComboBox, QInputDialog, QMessageBox, QTableWidgetItem, QVBoxLayout, QLabel, QListWidgetItem
+from PyQt5.QtWidgets import QApplication, QWidget, QComboBox, QInputDialog, QMessageBox, QTableWidgetItem, QVBoxLayout, QLabel, QListWidgetItem, QFileDialog
 from PyQt5.uic import loadUi
 from sms import send_sms
 from PyQt5.QtCore import QTimer, QDate, Qt
@@ -8,10 +8,14 @@ from datetime import datetime, timedelta
 from dbfunctions import get_user_fullname, get_user_id_by_phone
 import sys
 import re
+import os
 import dbfunctions
 import random
+import subprocess
 import jdatetime
-from datetime import date
+from openpyxl import Workbook
+from openpyxl.styles import Alignment, Font
+from datetime import datetime, date
 from PyQt5.QtChart import QChart, QChartView, QPieSeries
 
 
@@ -482,6 +486,7 @@ class FinancialReportPage(QWidget):
         self.setLayoutDirection(Qt.RightToLeft)
         self.fromLineEdit.setPlaceholderText("مثال: ۱۴۰۴/۰۴/۰۱")
         self.toLineEdit.setPlaceholderText("مثال: ۱۴۰۴/۰۴/۳۰")
+        self.exportToExcelButton.clicked.connect(self.export_to_excel)
 
         self.generateReportButton.clicked.connect(self.generate_report)
         self.backButton.clicked.connect(self.close)
@@ -666,6 +671,90 @@ class FinancialReportPage(QWidget):
         chart_view.setMinimumHeight(150)
         self.incomeChartLayout.addWidget(chart_view)
 
+    def export_to_excel(self):
+        print("✅ دکمه خروجی اکسل کلیک شد!")
+
+        try:
+            if self.categoryTable.rowCount() == 0:
+                show_messagebox(self, "⚠️ هشدار", "ابتدا گزارش‌گیری کنید تا داده‌ها برای خروجی آماده شوند.", QMessageBox.Warning)
+                return
+
+            # ساخت اکسل و شیت
+            wb = Workbook()
+            ws = wb.active
+            ws.title = "گزارش دسته‌بندی"
+            ws.sheet_view.rightToLeft = True  # ساختار راست‌چین
+
+            # فونت BNazanin (باید روی سیستم نصب باشه)
+            bnazanin_font = Font(name="BNazanin", size=12)
+
+            # عنوان‌ها
+            header = ["دسته", "نوع", "مبلغ", "تاریخ"]
+            ws.append(header)
+            for cell in ws[1]:
+                cell.alignment = Alignment(horizontal="center")
+                cell.font = bnazanin_font
+
+            # داده‌ها
+            for row in range(self.categoryTable.rowCount()):
+                cat = self.categoryTable.item(row, 0).text()
+                typ = self.categoryTable.item(row, 1).text()
+                amt_text = self.categoryTable.item(row, 2).text()
+                date_str = self.categoryTable.item(row, 3).text()
+
+                # پاک‌سازی مبلغ: حذف «ریال»، پرانتز و تبدیل به عدد
+                amt_clean = amt_text.replace("ریال", "").replace(",", "").replace("(", "").replace(")", "").strip()
+                try:
+                    amount_value = int(amt_clean)
+                    if typ == "هزینه":
+                        amount_value = -abs(amount_value)
+                    else:
+                        amount_value = abs(amount_value)
+                except:
+                    amount_value = amt_clean  # fallback
+
+                # اضافه به اکسل
+                ws.append([cat, typ, amount_value, date_str])
+
+            # وسط‌چینی و فونت داده‌ها
+            for data_row in ws.iter_rows(min_row=2, max_row=ws.max_row):
+                for cell in data_row:
+                    cell.alignment = Alignment(horizontal="center")
+                    cell.font = bnazanin_font
+
+            # تنظیم عرض ستون‌ها
+            for col in ws.columns:
+                max_length = 0
+                col_letter = col[0].column_letter
+                for cell in col:
+                    if cell.value:
+                        max_length = max(max_length, len(str(cell.value)))
+                ws.column_dimensions[col_letter].width = max_length + 3
+
+            # مسیر و نام فایل امن
+            desktop_path = os.path.join(os.path.expanduser("~"), "Desktop")
+            from_date_raw = self.fromLineEdit.text().strip()
+            to_date_raw = self.toLineEdit.text().strip()
+            from_date = self.fa_to_en(from_date_raw).replace("/", "-")
+            to_date = self.fa_to_en(to_date_raw).replace("/", "-")
+            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+            filename = f"گزارش مالی_{from_date}_تا_{to_date}_{timestamp}.xlsx"
+            full_path = os.path.join(desktop_path, filename)
+
+            # ذخیره فایل
+            wb.save(full_path)
+
+            # پیام موفقیت و باز کردن فایل
+            show_messagebox(self, "✅ موفقیت", f"فایل اکسل با موفقیت روی دسکتاپ ذخیره شد:\n{full_path}", QMessageBox.Information)
+
+            if os.name == "posix":
+                subprocess.call(["open", full_path])
+            elif os.name == "nt":
+                os.startfile(full_path)
+
+        except Exception as e:
+            print("❌ خطا:", str(e))
+            show_messagebox(self, "❌ خطا", f"خطا در ذخیره فایل اکسل:\n{str(e)}", QMessageBox.Critical)
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)
