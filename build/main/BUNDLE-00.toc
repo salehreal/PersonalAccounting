@@ -1,3 +1,0 @@
-([('main',
-   '/Users/mohammadsaleh/Desktop/Personal Accounting/dist/main',
-   'EXECUTABLE')],)
