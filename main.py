@@ -19,6 +19,10 @@ from datetime import datetime, date
 from PyQt5.QtChart import QChart, QChartView, QPieSeries
 
 
+def resource_path(relative_path):
+    base_path = getattr(sys, '_MEIPASS', os.path.abspath("."))
+    return os.path.join(base_path, relative_path)
+
 def fa_to_en(text):
     fa_digits = '۰۱۲۳۴۵۶۷۸۹'
     en_digits = '0123456789'
@@ -49,7 +53,7 @@ dbfunctions.create_tables()
 class Main(QWidget):
     def __init__(self):
         super().__init__()
-        loadUi('./ui/mainpage.ui', self)
+        loadUi('ui/mainpage.ui', self)
 
         self.signinbutton.clicked.connect(self.ShowSignInPage)
         self.signupbutton.clicked.connect(self.ShowSignUpPage)
@@ -66,7 +70,7 @@ class Main(QWidget):
 class SignInPage(QWidget):
     def __init__(self):
         super().__init__()
-        loadUi('./ui/signinpage.ui', self)
+        loadUi('ui/signinpage.ui', self)
         self.backbutton.clicked.connect(self.ShowMainPage)
         self.signinbutton.clicked.connect(self.CheckUser)
 
@@ -91,7 +95,7 @@ class SignInPage(QWidget):
                 db_id = user['id']
 
                 if db_phone == phone and db_password == password:
-                    self.errorlabel.setText('✅ خوش آمدید')
+                    self.errorlabel.setText('خوش آمدید')
                     global window5
                     window5 = WorkPage(db_id)
                     window5.show()
@@ -106,7 +110,7 @@ class SignInPage(QWidget):
 class SignUpPage(QWidget):
     def __init__(self):
         super().__init__()
-        loadUi('./ui/signupage.ui', self)
+        loadUi('ui/signupage.ui', self)
         self.backbutton.clicked.connect(self.ShowMainPage)
         self.signupbutton.clicked.connect(self.AddUser)
 
@@ -159,7 +163,7 @@ class SignUpPage(QWidget):
 class OtpPage(QWidget):
     def __init__(self):
         super().__init__()
-        loadUi('./ui/otppage.ui', self)
+        loadUi('ui/otppage.ui', self)
 
         self.generated_code = None
         self.signup_page = None
@@ -226,7 +230,6 @@ class OtpPage(QWidget):
 
             insert_user(user['fullname'], user['password'], user['phone'])
             user_id = get_user_id_by_phone(user['phone'])
-            # اطمینان از اینکه user_id مقدار عددی است
             if isinstance(user_id, (list, tuple)):
                 user_id = user_id[0]
             try:
@@ -235,13 +238,13 @@ class OtpPage(QWidget):
                 show_messagebox(self, "خطا", "شناسه کاربر نامعتبر است!", QMessageBox.Warning)
                 return
 
-            self.confirmbutton.setText("✅ تأیید شد")
+            self.confirmbutton.setText("تأیید شد")
             global window5
             window5 = WorkPage(user_id)
             window5.show()
             self.close()
         else:
-            self.confirmbutton.setText("❌ کد نادرست")
+            self.confirmbutton.setText("کد نادرست")
 
     def go_back(self):
         window3.show()
@@ -251,13 +254,12 @@ class OtpPage(QWidget):
 class WorkPage(QWidget):
     def __init__(self, user_id):
         super().__init__()
-        loadUi("./ui/workpage.ui", self)
+        loadUi("ui/workpage.ui", self)
 
-        # اطمینان از اینکه user_id مقدار عددی معتبر است
         try:
             user_id = int(user_id)
         except Exception:
-            show_messagebox(self, "خطا", "شناسه کاربر نامعتبر است!", QMessageBox.Warning)
+            show_messagebox(self, "خطا", "شناسه کاربر نامعتبر است", QMessageBox.Warning)
             user_id = None
 
         fullname = get_user_fullname(user_id) if user_id is not None else "--"
@@ -286,7 +288,7 @@ class WorkPage(QWidget):
 class AddEventPage(QWidget):
     def __init__(self):
         super().__init__()
-        loadUi('./ui/addevent.ui', self)
+        loadUi('ui/addevent.ui', self)
 
         today_jalali = jdatetime.date.today()
         formatted_date = today_jalali.strftime('%Y/%m/%d')
@@ -367,7 +369,7 @@ class AddEventPage(QWidget):
             return
 
         if not self.is_valid_jalali_date(date_text):
-            show_messagebox(self, 'خطا', 'فرمت تاریخ نامعتبر است. مانند: ۱۴۰۴/۰۴/۲۵', QMessageBox.Warning)
+            show_messagebox(self, 'خطا', 'فرمت تاریخ نامعتبر است. مثال: ۱۴۰۴/۰۴/۲۵', QMessageBox.Warning)
             return
 
         if not amount.isdigit():
@@ -399,14 +401,14 @@ class AddEventPage(QWidget):
         conn.commit()
         conn.close()
 
-        show_messagebox(self, 'ثبت شد', '✅ رویداد با موفقیت ثبت شد', QMessageBox.Information)
+        show_messagebox(self, 'ثبت شد', 'رویداد با موفقیت ثبت شد', QMessageBox.Information)
         self.close()
 
 
 class AddAccountPage(QWidget):
     def __init__(self):
         super().__init__()
-        loadUi("./ui/addaccount.ui", self)
+        loadUi("ui/addaccount.ui", self)
 
         self.addButton.clicked.connect(self.add_account)
         self.deleteButton.clicked.connect(self.delete_account)
@@ -430,7 +432,7 @@ class AddAccountPage(QWidget):
     def add_account(self):
         name = self.accountLineEdit.text().strip()
         if not name:
-            show_messagebox(self, "⚠️ خطا", "لطفاً نام حساب را وارد کنید", QMessageBox.Warning)
+            show_messagebox(self, "خطا", "لطفاً نام حساب را وارد کنید", QMessageBox.Warning)
             return
 
         conn = dbfunctions.connect()
@@ -439,11 +441,11 @@ class AddAccountPage(QWidget):
         result = cursor.fetchone()
 
         if result:
-            show_messagebox(self, "ℹ️", "این حساب قبلاً ثبت شده است", QMessageBox.Information)
+            show_messagebox(self, "", "این حساب قبلاً ثبت شده است", QMessageBox.Information)
         else:
             cursor.execute("INSERT INTO accounts (name) VALUES (?)", (name,))
             conn.commit()
-            show_messagebox(self, "✅ ثبت شد", "حساب جدید با موفقیت اضافه شد", QMessageBox.Information)
+            show_messagebox(self, "ثبت شد", "حساب جدید با موفقیت اضافه شد", QMessageBox.Information)
             self.accountLineEdit.clear()
             self.load_accounts()
 
@@ -452,7 +454,7 @@ class AddAccountPage(QWidget):
     def delete_account(self):
         selected_item = self.accountListWidget.currentItem()
         if not selected_item:
-            show_messagebox(self, "⚠️ خطا", "لطفاً یک حساب را برای حذف انتخاب کنید", QMessageBox.Warning)
+            show_messagebox(self, "خطا", "لطفاً یک حساب را برای حذف انتخاب کنید", QMessageBox.Warning)
             return
 
         account_name = selected_item.text()
@@ -468,11 +470,11 @@ class AddAccountPage(QWidget):
         count = cursor.fetchone()[0]
 
         if count > 0:
-            show_messagebox(self, "⛔ امکان حذف نیست", "این حساب در تراکنش‌ها استفاده شده و قابل حذف نیست", QMessageBox.Warning)
+            show_messagebox(self, "امکان حذف نیست", "این حساب در تراکنش ها استفاده شده و قابل حذف نیست", QMessageBox.Warning)
         else:
             cursor.execute("DELETE FROM accounts WHERE name = ?", (account_name,))
             conn.commit()
-            show_messagebox(self, "🗑️ حذف شد", "حساب با موفقیت حذف شد", QMessageBox.Information)
+            show_messagebox(self, "حذف شد", "حساب با موفقیت حذف شد", QMessageBox.Information)
             self.load_accounts()
 
         conn.close()
@@ -481,7 +483,7 @@ class AddAccountPage(QWidget):
 class FinancialReportPage(QWidget):
     def __init__(self):
         super().__init__()
-        loadUi('./ui/financialreport.ui', self)
+        loadUi('ui/financialreport.ui', self)
 
         self.setLayoutDirection(Qt.RightToLeft)
         self.fromLineEdit.setPlaceholderText("مثال: ۱۴۰۴/۰۴/۰۱")
@@ -515,11 +517,11 @@ class FinancialReportPage(QWidget):
         to_date = self.fa_to_en(self.toLineEdit.text().strip())
 
         if not from_date or not to_date:
-            show_messagebox(self, "⚠️ خطا", "لطفاً بازه زمانی را کامل وارد کنید", QMessageBox.Warning)
+            show_messagebox(self, "خطا", "لطفاً بازه زمانی را کامل وارد کنید", QMessageBox.Warning)
             return
 
         if not self.is_valid_jalali_date(from_date) or not self.is_valid_jalali_date(to_date):
-            show_messagebox(self, "⚠️ خطا", "تاریخ واردشده معتبر نیست. لطفاً مانند ۱۴۰۴/۰۴/۲۵ وارد کنید", QMessageBox.Warning)
+            show_messagebox(self, "خطا", "تاریخ واردشده معتبر نیست. لطفاً مانند ۱۴۰۴/۰۴/۲۵ وارد کنید", QMessageBox.Warning)
             return
 
         conn = dbfunctions.connect()
@@ -672,37 +674,31 @@ class FinancialReportPage(QWidget):
         self.incomeChartLayout.addWidget(chart_view)
 
     def export_to_excel(self):
-        print("✅ دکمه خروجی اکسل کلیک شد!")
 
         try:
             if self.categoryTable.rowCount() == 0:
-                show_messagebox(self, "⚠️ هشدار", "ابتدا گزارش‌گیری کنید تا داده‌ها برای خروجی آماده شوند.", QMessageBox.Warning)
+                show_messagebox(self, "هشدار", "ابتدا گزارش گیری کنید تا داده‌ها برای خروجی آماده شوند.", QMessageBox.Warning)
                 return
 
-            # ساخت اکسل و شیت
             wb = Workbook()
             ws = wb.active
-            ws.title = "گزارش دسته‌بندی"
-            ws.sheet_view.rightToLeft = True  # ساختار راست‌چین
+            ws.title = "گزارش دسته بندی"
+            ws.sheet_view.rightToLeft = True
 
-            # فونت BNazanin (باید روی سیستم نصب باشه)
             bnazanin_font = Font(name="BNazanin", size=12)
 
-            # عنوان‌ها
             header = ["دسته", "نوع", "مبلغ", "تاریخ"]
             ws.append(header)
             for cell in ws[1]:
                 cell.alignment = Alignment(horizontal="center")
                 cell.font = bnazanin_font
 
-            # داده‌ها
             for row in range(self.categoryTable.rowCount()):
                 cat = self.categoryTable.item(row, 0).text()
                 typ = self.categoryTable.item(row, 1).text()
                 amt_text = self.categoryTable.item(row, 2).text()
                 date_str = self.categoryTable.item(row, 3).text()
 
-                # پاک‌سازی مبلغ: حذف «ریال»، پرانتز و تبدیل به عدد
                 amt_clean = amt_text.replace("ریال", "").replace(",", "").replace("(", "").replace(")", "").strip()
                 try:
                     amount_value = int(amt_clean)
@@ -711,18 +707,15 @@ class FinancialReportPage(QWidget):
                     else:
                         amount_value = abs(amount_value)
                 except:
-                    amount_value = amt_clean  # fallback
+                    amount_value = amt_clean
 
-                # اضافه به اکسل
                 ws.append([cat, typ, amount_value, date_str])
 
-            # وسط‌چینی و فونت داده‌ها
             for data_row in ws.iter_rows(min_row=2, max_row=ws.max_row):
                 for cell in data_row:
                     cell.alignment = Alignment(horizontal="center")
                     cell.font = bnazanin_font
 
-            # تنظیم عرض ستون‌ها
             for col in ws.columns:
                 max_length = 0
                 col_letter = col[0].column_letter
@@ -731,7 +724,6 @@ class FinancialReportPage(QWidget):
                         max_length = max(max_length, len(str(cell.value)))
                 ws.column_dimensions[col_letter].width = max_length + 3
 
-            # مسیر و نام فایل امن
             desktop_path = os.path.join(os.path.expanduser("~"), "Desktop")
             from_date_raw = self.fromLineEdit.text().strip()
             to_date_raw = self.toLineEdit.text().strip()
@@ -741,11 +733,9 @@ class FinancialReportPage(QWidget):
             filename = f"گزارش مالی_{from_date}_تا_{to_date}_{timestamp}.xlsx"
             full_path = os.path.join(desktop_path, filename)
 
-            # ذخیره فایل
             wb.save(full_path)
 
-            # پیام موفقیت و باز کردن فایل
-            show_messagebox(self, "✅ موفقیت", f"فایل اکسل با موفقیت روی دسکتاپ ذخیره شد:\n{full_path}", QMessageBox.Information)
+            show_messagebox(self, "موفقیت", f"فایل اکسل با موفقیت روی دسکتاپ ذخیره شد:\n{full_path}", QMessageBox.Information)
 
             if os.name == "posix":
                 subprocess.call(["open", full_path])
@@ -753,8 +743,8 @@ class FinancialReportPage(QWidget):
                 os.startfile(full_path)
 
         except Exception as e:
-            print("❌ خطا:", str(e))
-            show_messagebox(self, "❌ خطا", f"خطا در ذخیره فایل اکسل:\n{str(e)}", QMessageBox.Critical)
+            print("خطا:", str(e))
+            show_messagebox(self, "خطا", f"خطا در ذخیره فایل اکسل:\n{str(e)}", QMessageBox.Critical)
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)

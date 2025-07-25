@@ -9,7 +9,7 @@ def send_sms(recipients, code):
                 'Content-Type': 'application/json'
             },
             json={
-                "code": "fqmt1275wjd02wg",  # کد الگوی پنل پیامک
+                "code": "fqmt1275wjd02wg",
                 "sender": "+983000505",
                 "recipient": recipients,
                 "variable": {
