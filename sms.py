@@ -21,10 +21,9 @@ def send_sms(recipients, code):
         if response.status_code == 200:
             return True
         else:
-            print("❌ SMS failed:", response.status_code, response.text)
+            print("SMS failed:", response.status_code, response.text)
             return False
 
     except Exception as e:
-        print("⚠️ SMS Exception:", e)
+        print("SMS Exception:", e)
         return False
-

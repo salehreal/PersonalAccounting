@@ -137,4 +137,3 @@ def get_user_id_by_phone(phone):
     result = cursor.fetchone()
     conn.close()
     return result[0] if result else None
-

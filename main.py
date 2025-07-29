@@ -273,7 +273,6 @@ class WorkPage(QWidget):
         self.FinancialReportButton.clicked.connect(self.ShowFinancialReportPage)
         self.EventsButton.clicked.connect(self.ShowEventsPage)
 
-
     def ShowIncomePage(self):
         global income_window
         income_window = AddEventPage()
@@ -495,31 +494,26 @@ class FinancialReportPage(QWidget):
         super().__init__()
         uic.loadUi(resource_path('ui/financialreport.ui'), self)
 
-        # تنظیمات جهت متن و placeholderها
         self.setLayoutDirection(Qt.RightToLeft)
         self.fromLineEdit.setPlaceholderText("مثال: ۱۴۰۴/۰۴/۰۱")
         self.toLineEdit.setPlaceholderText("مثال: ۱۴۰۴/۰۴/۳۰")
         self.yearLineEdit.setPlaceholderText("مثال: ۱۴۰۴")
 
-        # اتصال سیگنال‌ها به اسلات‌ها
         self.exportToExcelButton.clicked.connect(self.export_to_excel)
         self.generateReportButton.clicked.connect(self.generate_report)
         self.backButton.clicked.connect(self.close)
         self.exportToExcelYearlyButton.clicked.connect(self.export_to_excel_yearly)
         self.generateYearlyReportButton.clicked.connect(self.generate_yearly_report)
 
-        # ساخت layout برای نمودار روند داخل container موجود در ui
         self.TrendChartLayout = QVBoxLayout()
         self.TrendChartContainer.setLayout(self.TrendChartLayout)
         self.TrendChartContainer.setStyleSheet("background-color: #eefaff;")
 
-        # ساخت layout برای سایر نمودارها
         self.expenseChartLayout = QVBoxLayout()
         self.expenseChartContainer.setLayout(self.expenseChartLayout)
 
         self.incomeChartLayout = QVBoxLayout()
         self.incomeChartContainer.setLayout(self.incomeChartLayout)
-
 
     def fa_to_en(self, text):
         fa_digits = '۰۱۲۳۴۵۶۷۸۹'
@@ -552,7 +546,6 @@ class FinancialReportPage(QWidget):
         conn = dbfunctions.connect()
         cursor = conn.cursor()
 
-        # مجموع درآمد و هزینه
         cursor.execute("""
             SELECT SUM(t.amount)
             FROM transactions t
@@ -573,7 +566,6 @@ class FinancialReportPage(QWidget):
         self.totalExpenseLabel.setText(f"{expense:,} ریال")
         self.netBalanceLabel.setText(f"{(income - expense):,} ریال")
 
-        # جزئیات تراکنش‌ها در جدول دسته‌بندی
         cursor.execute("""
             SELECT c.name, c.type, t.amount, t.date
             FROM transactions t
@@ -599,7 +591,6 @@ class FinancialReportPage(QWidget):
             for j in range(4):
                 self.categoryTable.item(i, j).setTextAlignment(Qt.AlignCenter)
 
-        # موجودی حساب‌ها
         cursor.execute("""
             SELECT a.name,
                 SUM(CASE WHEN c.type = 'expense' THEN -t.amount ELSE t.amount END)
@@ -614,7 +605,6 @@ class FinancialReportPage(QWidget):
         self.accountTable.setColumnCount(2)
         self.accountTable.setHorizontalHeaderLabels(["حساب", "موجودی"])
 
-        # درآمدها بر اساس دسته‌بندی
         cursor.execute("""
             SELECT c.name, SUM(t.amount) AS total_income
             FROM transactions t
@@ -644,7 +634,6 @@ class FinancialReportPage(QWidget):
             for j in range(2):
                 self.accountTable.item(i, j).setTextAlignment(Qt.AlignCenter)
 
-        # هزینه‌ها بر اساس دسته‌بندی
         cursor.execute("""
             SELECT c.name, SUM(t.amount) AS total_expense
             FROM transactions t
@@ -671,7 +660,6 @@ class FinancialReportPage(QWidget):
         self.show_trend_chart()
 
     def generate_yearly_report(self):
-        # دریافت و اعتبارسنجی سال ورودی
         year_raw = self.yearLineEdit.text().strip()
         year = self.fa_to_en(year_raw)
 
@@ -683,11 +671,9 @@ class FinancialReportPage(QWidget):
         from_date = f"{year}/01/01"
         to_date = f"{year}/12/29"
 
-        # اتصال به پایگاه داده
         conn = dbfunctions.connect()
         cursor = conn.cursor()
 
-        # ⚙️ تراکنش‌های سالیانه با جزئیات دسته‌بندی
         cursor.execute("""
             SELECT c.name, c.type, t.amount, t.date
             FROM transactions t
@@ -723,7 +709,6 @@ class FinancialReportPage(QWidget):
         self.totalExpenseLabel.setText(f"{total_expense:,} ریال")
         self.netBalanceLabel.setText(f"{(total_income - total_expense):,} ریال")
 
-        # 📊 موجودی حساب‌ها سالیانه
         cursor.execute("""
             SELECT a.name,
                 SUM(CASE WHEN c.type = 'expense' THEN -t.amount ELSE t.amount END)
@@ -747,7 +732,6 @@ class FinancialReportPage(QWidget):
             for j in range(2):
                 self.accountTable.item(i, j).setTextAlignment(Qt.AlignCenter)
 
-        # 💰 درآمدها بر اساس دسته‌بندی در بازه سال
         cursor.execute("""
             SELECT c.name, SUM(t.amount) AS total_income
             FROM transactions t
@@ -768,7 +752,6 @@ class FinancialReportPage(QWidget):
             for j in range(2):
                 self.categoryincomeTable.item(i, j).setTextAlignment(Qt.AlignCenter)
 
-        # 💸 هزینه‌ها بر اساس دسته‌بندی در سال
         cursor.execute("""
             SELECT c.name, SUM(t.amount) AS total_expense
             FROM transactions t
@@ -791,7 +774,6 @@ class FinancialReportPage(QWidget):
 
         conn.close()
 
-        # 📈 رسم نمودارهای سالیانه
         self.show_expense_chart()
         self.show_income_chart()
         self.show_trend_chart()
@@ -882,7 +864,6 @@ class FinancialReportPage(QWidget):
             return None, None
 
     def show_trend_chart(self):
-        # پاک‌سازی قبلی
         while self.TrendChartLayout.count():
             child = self.TrendChartLayout.takeAt(0)
             if child.widget():
@@ -891,7 +872,6 @@ class FinancialReportPage(QWidget):
         monthly_income = {}
         monthly_expense = {}
 
-        # 🧠 تعیین بازه بر اساس ورودی کاربر (سال یا تاریخ)
         year_text = self.yearLineEdit.text().strip()
         from_text = self.fromLineEdit.text().strip()
         to_text = self.toLineEdit.text().strip()
@@ -915,15 +895,13 @@ class FinancialReportPage(QWidget):
             self.TrendChartLayout.addWidget(label)
             return
 
-        # 📅 ساخت لیست ماه‌ها
         labels = []
         current = from_date.replace(day=1)
         while current <= to_date:
-            label = f"{str(current.year)[-2:]}/{current.month:02d}"  # ← سال/ماه
+            label = f"{str(current.year)[-2:]}/{current.month:02d}"
             labels.append(label)
             current += relativedelta(months=1)
 
-        # 💳 استخراج داده‌های مربوط از جدول
         for i in range(self.categoryTable.rowCount()):
             type_item = self.categoryTable.item(i, 1)
             amount_item = self.categoryTable.item(i, 2)
@@ -941,7 +919,7 @@ class FinancialReportPage(QWidget):
             if transaction_date < from_date or transaction_date > to_date:
                 continue
 
-            key = f"{str(transaction_date.year)[-2:]}/{transaction_date.month:02d}"  # ← سال/ماه
+            key = f"{str(transaction_date.year)[-2:]}/{transaction_date.month:02d}"
             type_fa = type_item.text().strip()
             amount_text = amount_item.text().replace("ریال", "").replace(",", "").replace("(", "").replace(")", "").strip()
             try:
@@ -954,7 +932,6 @@ class FinancialReportPage(QWidget):
             elif type_fa == "هزینه":
                 monthly_expense[key] = monthly_expense.get(key, 0) + amount
 
-        # ⛔ اگر هیچ داده‌ای نبود
         total = sum(monthly_income.values()) + sum(monthly_expense.values())
         if total == 0:
             label = QLabel("هیچ درآمد یا هزینه‌ای برای نمایش در نمودار نیست")
@@ -963,7 +940,6 @@ class FinancialReportPage(QWidget):
             self.TrendChartLayout.addWidget(label)
             return
 
-        # 📈 ساخت سری‌های نمودار
         income_series = QLineSeries()
         income_series.setName("درآمد ماهانه")
 
@@ -976,18 +952,16 @@ class FinancialReportPage(QWidget):
             income_series.append(idx, income_val)
             expense_series.append(idx, expense_val)
 
-        # 📊 ساخت نمودار و محور‌ها
         chart = QChart()
         chart.addSeries(income_series)
         chart.addSeries(expense_series)
         chart.setTitle("روند مالی ماهانه")
         chart.legend().setAlignment(Qt.AlignBottom)
 
-        # محور افقی
         axisX = QCategoryAxis()
         axisX.setLabelsPosition(QCategoryAxis.AxisLabelsPositionOnValue)
         font = QFont()
-        font.setPointSize(8)  # سایز فونت لیبل‌ها
+        font.setPointSize(8)
         axisX.setLabelsFont(font)
         for idx, label in enumerate(labels):
             axisX.append(label, idx)
@@ -995,7 +969,6 @@ class FinancialReportPage(QWidget):
         income_series.attachAxis(axisX)
         expense_series.attachAxis(axisX)
 
-        # محور عمودی
         axisY = QValueAxis()
         axisY.setLabelFormat("%d")
         axisY.setTitleText("مبلغ (ریال)")
@@ -1003,7 +976,6 @@ class FinancialReportPage(QWidget):
         income_series.attachAxis(axisY)
         expense_series.attachAxis(axisY)
 
-        # نمای نمودار
         chart_view = QChartView(chart)
         chart_view.setRenderHint(QPainter.Antialiasing)
         chart_view.setMinimumHeight(200)
@@ -1013,7 +985,6 @@ class FinancialReportPage(QWidget):
         self.TrendChartLayout.addWidget(chart_view)
 
     def export_to_excel(self):
-
         try:
             if self.categoryTable.rowCount() == 0:
                 show_messagebox(self, "هشدار", "ابتدا گزارش گیری کنید تا داده‌ها برای خروجی آماده شوند.", QMessageBox.Warning)
@@ -1091,11 +1062,10 @@ class FinancialReportPage(QWidget):
                 show_messagebox(self, "هشدار", "ابتدا گزارش سالیانه را تولید کنید.", QMessageBox.Warning)
                 return
 
-            # جمع کردن درآمد و هزینه هر ماه
             monthly_data = {}
             for i in range(self.categoryTable.rowCount()):
                 date_str = self.categoryTable.item(i, 3).text()
-                month = date_str.split("/")[1]  # assuming "YYYY/MM/DD"
+                month = date_str.split("/")[1]
                 typ = self.categoryTable.item(i, 1).text()
                 amount_text = self.categoryTable.item(i, 2).text().replace("ریال", "").replace(",", "").replace("(", "").replace(")", "").strip()
 
@@ -1111,7 +1081,6 @@ class FinancialReportPage(QWidget):
                 elif typ == "هزینه":
                     monthly_data[month]["expense"] += amt
 
-            # ساخت اکسل
             wb = Workbook()
             ws = wb.active
             ws.title = "گزارش سالیانه"
@@ -1288,7 +1257,7 @@ class EventsPage(QtWidgets.QWidget):
         return {name: type_ for name, type_ in rows}
 
     def populate_table(self, data):
-        category_types = self.load_category_types()  # گرفتن نوع دسته‌بندی‌ها
+        category_types = self.load_category_types()
 
         self.eventsTable.setLayoutDirection(QtCore.Qt.RightToLeft)
         self.eventsTable.setColumnCount(7)
@@ -1306,18 +1275,18 @@ class EventsPage(QtWidgets.QWidget):
             event_type = "درآمد" if category_type == "income" else "هزینه" if category_type == "expense" else "—"
 
             reordered_row = [
-                row[0],         # شناسه
-                row[1],         # تاریخ
-                event_type,     # نوع رویداد (بین تاریخ و دسته‌بندی)
-                category_name,  # دسته‌بندی
-                row[3],         # مبلغ
-                row[4],         # حساب
-                row[5],         # توضیحات
+                row[0],
+                row[1],
+                event_type,
+                category_name,
+                row[3],
+                row[4],
+                row[5],
             ]
 
             for j, item in enumerate(reordered_row):
                 value = str(item)
-                if j == 4:  # ستون مبلغ
+                if j == 4:
                     try:
                         value = "{:,}".format(int(str(row[3]).replace(",", "")))
                     except:
@@ -1326,7 +1295,7 @@ class EventsPage(QtWidgets.QWidget):
                 cell = QtWidgets.QTableWidgetItem(value)
                 cell.setTextAlignment(QtCore.Qt.AlignCenter)
 
-                if j == 0:  # ستون شناسه غیرقابل ویرایش
+                if j == 0:
                     cell.setFlags(QtCore.Qt.ItemIsSelectable | QtCore.Qt.ItemIsEnabled)
 
                 self.eventsTable.setItem(i, j, cell)
@@ -1386,7 +1355,6 @@ class EventsPage(QtWidgets.QWidget):
                 QtWidgets.QMessageBox.information(self, "موفقیت", "رویداد با موفقیت حذف شد.")
             except Exception as e:
                 QtWidgets.QMessageBox.critical(self, "خطا", f"در حذف رویداد مشکلی پیش آمد:\n{e}")
-
 
 
 if __name__ == '__main__':
