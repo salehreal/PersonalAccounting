@@ -1,0 +1,582 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>Form</class>
+ <widget class="QWidget" name="Form">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>786</width>
+    <height>625</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>Form</string>
+  </property>
+  <property name="styleSheet">
+   <string notr="true">QWidget {
+    background-color: rgb(0, 92, 137);
+	color: white
+}
+</string>
+  </property>
+  <widget class="QTableWidget" name="eventsTable">
+   <property name="geometry">
+    <rect>
+     <x>20</x>
+     <y>340</y>
+     <width>741</width>
+     <height>221</height>
+    </rect>
+   </property>
+   <property name="styleSheet">
+    <string notr="true">QTableView {
+    background-color: #ffffff;
+    color: #222222;
+    gridline-color: #cccccc;
+    font-size: 14px;
+    font-family: Tahoma;
+    selection-background-color: #d0eaff;
+    selection-color: #000000;
+    border: 1px solid #cccccc;
+}
+
+QHeaderView::section {
+    background-color: #eeeeee;
+    color: #333333;
+    font-weight: bold;
+    font-size: 13px;
+    padding: 5px;
+    border: 1px solid #cccccc;
+}
+
+</string>
+   </property>
+  </widget>
+  <widget class="QLineEdit" name="fromLineEdit">
+   <property name="geometry">
+    <rect>
+     <x>460</x>
+     <y>20</y>
+     <width>151</width>
+     <height>31</height>
+    </rect>
+   </property>
+   <property name="styleSheet">
+    <string notr="true">QLineEdit {
+    background-color: #f9f9f9;
+    color: #2c3e50;
+    border: 1px solid #bdc3c7;
+    border-radius: 6px;
+    padding: 6px;
+    font-size: 14px;
+}
+
+QLineEdit:focus {
+    border: 1px solid #3498db;
+    background-color: #ecf6fc;
+}
+
+</string>
+   </property>
+  </widget>
+  <widget class="QLabel" name="label_5">
+   <property name="geometry">
+    <rect>
+     <x>350</x>
+     <y>20</y>
+     <width>21</width>
+     <height>21</height>
+    </rect>
+   </property>
+   <property name="styleSheet">
+    <string notr="true">
+QLabel {
+    background-color: rgba(0, 0, 0, 0);
+    border: none;
+    color: white;
+    font: 16pt &quot;.AppleSystemUIFont&quot;;
+}
+
+</string>
+   </property>
+   <property name="text">
+    <string>تا</string>
+   </property>
+  </widget>
+  <widget class="QLabel" name="label_4">
+   <property name="geometry">
+    <rect>
+     <x>630</x>
+     <y>20</y>
+     <width>131</width>
+     <height>21</height>
+    </rect>
+   </property>
+   <property name="styleSheet">
+    <string notr="true">
+QLabel {
+    background-color: rgba(0, 0, 0, 0);
+    border: none;
+    color: white;
+    font: 16pt &quot;.AppleSystemUIFont&quot;;
+}
+
+</string>
+   </property>
+   <property name="text">
+    <string>تاریخ:     از</string>
+   </property>
+  </widget>
+  <widget class="QLineEdit" name="toLineEdit">
+   <property name="geometry">
+    <rect>
+     <x>130</x>
+     <y>20</y>
+     <width>151</width>
+     <height>31</height>
+    </rect>
+   </property>
+   <property name="styleSheet">
+    <string notr="true">QLineEdit {
+    background-color: #f9f9f9;
+    color: #2c3e50;
+    border: 1px solid #bdc3c7;
+    border-radius: 6px;
+    padding: 6px;
+    font-size: 14px;
+}
+
+QLineEdit:focus {
+    border: 1px solid #3498db;
+    background-color: #ecf6fc;
+}
+
+</string>
+   </property>
+  </widget>
+  <widget class="QPushButton" name="searchButton">
+   <property name="geometry">
+    <rect>
+     <x>570</x>
+     <y>200</y>
+     <width>191</width>
+     <height>32</height>
+    </rect>
+   </property>
+   <property name="styleSheet">
+    <string notr="true">QPushButton {
+	font: 16pt &quot;.AppleSystemUIFont&quot;;
+    background-color:rgb(109, 171, 231);
+    color: white;
+    border-radius: 6px;
+    padding: 6px 12px;
+    font-weight: bold;
+}
+QPushButton:hover {
+    background-color: rgb(109, 160, 200);
+}
+
+</string>
+   </property>
+   <property name="text">
+    <string>جستجو</string>
+   </property>
+  </widget>
+  <widget class="QLabel" name="label_6">
+   <property name="geometry">
+    <rect>
+     <x>660</x>
+     <y>80</y>
+     <width>101</width>
+     <height>21</height>
+    </rect>
+   </property>
+   <property name="styleSheet">
+    <string notr="true">
+QLabel {
+    background-color: rgba(0, 0, 0, 0);
+    border: none;
+    color: white;
+    font: 16pt &quot;.AppleSystemUIFont&quot;;
+}
+
+</string>
+   </property>
+   <property name="text">
+    <string>نوع رویداد:</string>
+   </property>
+  </widget>
+  <widget class="QComboBox" name="typeComboBox">
+   <property name="geometry">
+    <rect>
+     <x>460</x>
+     <y>80</y>
+     <width>151</width>
+     <height>31</height>
+    </rect>
+   </property>
+   <property name="styleSheet">
+    <string notr="true">QComboBox {
+    background-color: #f9f9f9;
+    color: #2c3e50;
+    border: 1px solid #bdc3c7;
+    border-radius: 6px;
+    padding: 6px;
+    font-size: 14px;
+	qproperty-font: &quot;FontAwesome&quot;;
+}
+
+QComboBox:focus {
+    border: 1px solid #3498db;
+    background-color: #ecf6fc;
+}
+
+QComboBox::drop-down {
+    subcontrol-origin: padding;
+    subcontrol-position: top right;
+    width: 25px;
+    border-left: 1px solid #bdc3c7;
+    border-radius: 0px 6px 6px 0px;
+    background-color: #e0e0e0;
+}
+
+QComboBox::down-arrow {
+    image: url(icons/down-arrow.png);  /* مسیر نسبی نسبت به main.py */
+    width: 12px;
+    height: 12px;
+}
+
+
+
+
+
+</string>
+   </property>
+  </widget>
+  <widget class="QLabel" name="label_7">
+   <property name="geometry">
+    <rect>
+     <x>310</x>
+     <y>80</y>
+     <width>101</width>
+     <height>21</height>
+    </rect>
+   </property>
+   <property name="styleSheet">
+    <string notr="true">
+QLabel {
+    background-color: rgba(0, 0, 0, 0);
+    border: none;
+    color: white;
+    font: 16pt &quot;.AppleSystemUIFont&quot;;
+}
+
+</string>
+   </property>
+   <property name="text">
+    <string>دسته بندی:</string>
+   </property>
+  </widget>
+  <widget class="QComboBox" name="categoryComboBox">
+   <property name="geometry">
+    <rect>
+     <x>130</x>
+     <y>80</y>
+     <width>151</width>
+     <height>31</height>
+    </rect>
+   </property>
+   <property name="styleSheet">
+    <string notr="true">QComboBox {
+    background-color: #f9f9f9;
+    color: #2c3e50;
+    border: 1px solid #bdc3c7;
+    border-radius: 6px;
+    padding: 6px;
+    font-size: 14px;
+	qproperty-font: &quot;FontAwesome&quot;;
+}
+
+QComboBox:focus {
+    border: 1px solid #3498db;
+    background-color: #ecf6fc;
+}
+
+QComboBox::drop-down {
+    subcontrol-origin: padding;
+    subcontrol-position: top right;
+    width: 25px;
+    border-left: 1px solid #bdc3c7;
+    border-radius: 0px 6px 6px 0px;
+    background-color: #e0e0e0;
+}
+
+QComboBox::down-arrow {
+    image: url(icons/down-arrow.png);  /* مسیر نسبی نسبت به main.py */
+    width: 12px;
+    height: 12px;
+}</string>
+   </property>
+  </widget>
+  <widget class="QLabel" name="label_2">
+   <property name="geometry">
+    <rect>
+     <x>670</x>
+     <y>140</y>
+     <width>91</width>
+     <height>21</height>
+    </rect>
+   </property>
+   <property name="styleSheet">
+    <string notr="true">
+QLabel {
+    background-color: rgba(0, 0, 0, 0);
+    border: none;
+    color: white;
+    font: 16pt &quot;.AppleSystemUIFont&quot;;
+}
+
+</string>
+   </property>
+   <property name="text">
+    <string>مبلغ (ریال):</string>
+   </property>
+  </widget>
+  <widget class="QLineEdit" name="CostLineEdit">
+   <property name="geometry">
+    <rect>
+     <x>460</x>
+     <y>140</y>
+     <width>151</width>
+     <height>31</height>
+    </rect>
+   </property>
+   <property name="styleSheet">
+    <string notr="true">QLineEdit {
+    background-color: #f9f9f9;
+    color: #2c3e50;
+    border: 1px solid #bdc3c7;
+    border-radius: 6px;
+    padding: 6px;
+    font-size: 14px;
+}
+
+QLineEdit:focus {
+    border: 1px solid #3498db;
+    background-color: #ecf6fc;
+}
+
+</string>
+   </property>
+  </widget>
+  <widget class="QLabel" name="label_3">
+   <property name="geometry">
+    <rect>
+     <x>310</x>
+     <y>140</y>
+     <width>101</width>
+     <height>21</height>
+    </rect>
+   </property>
+   <property name="styleSheet">
+    <string notr="true">
+QLabel {
+    background-color: rgba(0, 0, 0, 0);
+    border: none;
+    color: white;
+    font: 16pt &quot;.AppleSystemUIFont&quot;;
+}
+
+</string>
+   </property>
+   <property name="text">
+    <string>حساب بانکی:</string>
+   </property>
+  </widget>
+  <widget class="QComboBox" name="accountComboBox">
+   <property name="geometry">
+    <rect>
+     <x>130</x>
+     <y>140</y>
+     <width>151</width>
+     <height>31</height>
+    </rect>
+   </property>
+   <property name="styleSheet">
+    <string notr="true">QComboBox {
+    background-color: #f9f9f9;
+    color: #2c3e50;
+    border: 1px solid #bdc3c7;
+    border-radius: 6px;
+    padding: 6px;
+    font-size: 14px;
+	qproperty-font: &quot;FontAwesome&quot;;
+}
+
+QComboBox:focus {
+    border: 1px solid #3498db;
+    background-color: #ecf6fc;
+}
+
+QComboBox::drop-down {
+    subcontrol-origin: padding;
+    subcontrol-position: top right;
+    width: 25px;
+    border-left: 1px solid #bdc3c7;
+    border-radius: 0px 6px 6px 0px;
+    background-color: #e0e0e0;
+}
+
+QComboBox::down-arrow {
+    image: url(icons/down-arrow.png);  /* مسیر نسبی نسبت به main.py */
+    width: 12px;
+    height: 12px;
+}</string>
+   </property>
+  </widget>
+  <widget class="QPushButton" name="editButton">
+   <property name="geometry">
+    <rect>
+     <x>50</x>
+     <y>200</y>
+     <width>191</width>
+     <height>32</height>
+    </rect>
+   </property>
+   <property name="styleSheet">
+    <string notr="true">QPushButton {
+	font: 16pt &quot;.AppleSystemUIFont&quot;;
+    background-color:rgb(109, 171, 231);
+    color: white;
+    border-radius: 6px;
+    padding: 6px 12px;
+    font-weight: bold;
+}
+QPushButton:hover {
+    background-color: rgb(109, 160, 200);
+}
+
+</string>
+   </property>
+   <property name="text">
+    <string>ذخیره تغییرات</string>
+   </property>
+  </widget>
+  <widget class="QPushButton" name="removeButton">
+   <property name="geometry">
+    <rect>
+     <x>310</x>
+     <y>200</y>
+     <width>191</width>
+     <height>32</height>
+    </rect>
+   </property>
+   <property name="styleSheet">
+    <string notr="true">QPushButton {
+	font: 16pt &quot;.AppleSystemUIFont&quot;;
+    background-color:rgb(109, 171, 231);
+    color: white;
+    border-radius: 6px;
+    padding: 6px 12px;
+    font-weight: bold;
+}
+QPushButton:hover {
+    background-color: rgb(109, 160, 200);
+}
+
+</string>
+   </property>
+   <property name="text">
+    <string>حذف رویداد</string>
+   </property>
+  </widget>
+  <widget class="QLabel" name="label_8">
+   <property name="geometry">
+    <rect>
+     <x>90</x>
+     <y>260</y>
+     <width>671</width>
+     <height>21</height>
+    </rect>
+   </property>
+   <property name="styleSheet">
+    <string notr="true">
+QLabel {
+    background-color: rgba(0, 0, 0, 0);
+    border: none;
+    color: white;
+    font: 16pt &quot;.AppleSystemUIFont&quot;;
+}
+
+</string>
+   </property>
+   <property name="text">
+    <string>توجه: برای حذف رویداد مورد نظر، روی ردیف آن کلیک کنید و سپس دکمه حذف رویداد را کلیک نمایید.</string>
+   </property>
+  </widget>
+  <widget class="QLabel" name="label_9">
+   <property name="geometry">
+    <rect>
+     <x>100</x>
+     <y>300</y>
+     <width>661</width>
+     <height>21</height>
+    </rect>
+   </property>
+   <property name="styleSheet">
+    <string notr="true">
+QLabel {
+    background-color: rgba(0, 0, 0, 0);
+    border: none;
+    color: white;
+    font: 16pt &quot;.AppleSystemUIFont&quot;;
+}
+
+</string>
+   </property>
+   <property name="text">
+    <string>همچین پس از ویرایش سلول ها، روی دکمه ذخیره تغییرات کلیک کنید تا تغییرات ذخیره شوند.</string>
+   </property>
+  </widget>
+  <widget class="QPushButton" name="backbutton">
+   <property name="geometry">
+    <rect>
+     <x>30</x>
+     <y>580</y>
+     <width>75</width>
+     <height>23</height>
+    </rect>
+   </property>
+   <property name="font">
+    <font>
+     <family>.AppleSystemUIFont</family>
+     <pointsize>11</pointsize>
+     <weight>75</weight>
+     <italic>false</italic>
+     <bold>true</bold>
+    </font>
+   </property>
+   <property name="styleSheet">
+    <string notr="true">QPushButton {
+	font: 11pt &quot;.AppleSystemUIFont&quot;;
+    background-color:rgb(109, 171, 231);
+    color: white;
+    border-radius: 6px;
+    padding: 6px 12px;
+    font-weight: bold;
+}
+QPushButton:hover {
+    background-color: rgb(109, 160, 200);
+}
+
+</string>
+   </property>
+   <property name="text">
+    <string>بازگشت</string>
+   </property>
+  </widget>
+ </widget>
+ <resources/>
+ <connections/>
+</ui>

@@ -1,9 +1,10 @@
 from PyQt5.QtWidgets import QApplication, QWidget, QComboBox, QInputDialog, QMessageBox, QTableWidgetItem, QVBoxLayout, QLabel, QListWidgetItem, QFileDialog
 from PyQt5.uic import loadUi
+from PyQt5 import uic, QtWidgets, QtCore
 from sms import send_sms
 from PyQt5.QtCore import QTimer, QDate, Qt
-from PyQt5.QtChart import QChart, QChartView, QPieSeries
-from PyQt5.QtGui import QPainter, QPixmap
+from PyQt5.QtChart import QChart, QChartView, QPieSeries, QLineSeries, QCategoryAxis, QValueAxis
+from PyQt5.QtGui import QPainter, QPixmap, QColor, QFont
 from datetime import datetime, timedelta
 from dbfunctions import get_user_fullname, get_user_id_by_phone
 import sys
@@ -13,10 +14,12 @@ import dbfunctions
 import random
 import subprocess
 import jdatetime
+import sqlite3
 from openpyxl import Workbook
 from openpyxl.styles import Alignment, Font
 from datetime import datetime, date
 from PyQt5.QtChart import QChart, QChartView, QPieSeries
+from dateutil.relativedelta import relativedelta
 
 
 def resource_path(relative_path):
@@ -53,7 +56,7 @@ dbfunctions.create_tables()
 class Main(QWidget):
     def __init__(self):
         super().__init__()
-        loadUi('ui/mainpage.ui', self)
+        uic.loadUi(resource_path('ui/mainpage.ui'), self)
 
         self.signinbutton.clicked.connect(self.ShowSignInPage)
         self.signupbutton.clicked.connect(self.ShowSignUpPage)
@@ -70,7 +73,7 @@ class Main(QWidget):
 class SignInPage(QWidget):
     def __init__(self):
         super().__init__()
-        loadUi('ui/signinpage.ui', self)
+        uic.loadUi(resource_path('ui/signinpage.ui'), self)
         self.backbutton.clicked.connect(self.ShowMainPage)
         self.signinbutton.clicked.connect(self.CheckUser)
 
@@ -110,7 +113,7 @@ class SignInPage(QWidget):
 class SignUpPage(QWidget):
     def __init__(self):
         super().__init__()
-        loadUi('ui/signupage.ui', self)
+        uic.loadUi(resource_path('ui/signupage.ui'), self)
         self.backbutton.clicked.connect(self.ShowMainPage)
         self.signupbutton.clicked.connect(self.AddUser)
 
@@ -163,7 +166,7 @@ class SignUpPage(QWidget):
 class OtpPage(QWidget):
     def __init__(self):
         super().__init__()
-        loadUi('ui/otppage.ui', self)
+        uic.loadUi(resource_path('ui/otppage.ui'), self)
 
         self.generated_code = None
         self.signup_page = None
@@ -254,7 +257,7 @@ class OtpPage(QWidget):
 class WorkPage(QWidget):
     def __init__(self, user_id):
         super().__init__()
-        loadUi("ui/workpage.ui", self)
+        uic.loadUi(resource_path("ui/workpage.ui"), self)
 
         try:
             user_id = int(user_id)
@@ -268,6 +271,8 @@ class WorkPage(QWidget):
         self.ConfirmEventButton.clicked.connect(self.ShowIncomePage)
         self.AccountsButton.clicked.connect(self.ShowAccountsPage)
         self.FinancialReportButton.clicked.connect(self.ShowFinancialReportPage)
+        self.EventsButton.clicked.connect(self.ShowEventsPage)
+
 
     def ShowIncomePage(self):
         global income_window
@@ -283,12 +288,17 @@ class WorkPage(QWidget):
         global report_window
         report_window = FinancialReportPage()
         report_window.show()
+    
+    def ShowEventsPage(self):
+        global report_window
+        report_window = EventsPage()
+        report_window.show()
 
 
 class AddEventPage(QWidget):
     def __init__(self):
         super().__init__()
-        loadUi('ui/addevent.ui', self)
+        uic.loadUi(resource_path('ui/addevent.ui'), self)
 
         today_jalali = jdatetime.date.today()
         formatted_date = today_jalali.strftime('%Y/%m/%d')
@@ -408,7 +418,7 @@ class AddEventPage(QWidget):
 class AddAccountPage(QWidget):
     def __init__(self):
         super().__init__()
-        loadUi("ui/addaccount.ui", self)
+        uic.loadUi(resource_path("ui/addaccount.ui"), self)
 
         self.addButton.clicked.connect(self.add_account)
         self.deleteButton.clicked.connect(self.delete_account)
@@ -483,18 +493,33 @@ class AddAccountPage(QWidget):
 class FinancialReportPage(QWidget):
     def __init__(self):
         super().__init__()
-        loadUi('ui/financialreport.ui', self)
+        uic.loadUi(resource_path('ui/financialreport.ui'), self)
 
+        # تنظیمات جهت متن و placeholderها
         self.setLayoutDirection(Qt.RightToLeft)
         self.fromLineEdit.setPlaceholderText("مثال: ۱۴۰۴/۰۴/۰۱")
         self.toLineEdit.setPlaceholderText("مثال: ۱۴۰۴/۰۴/۳۰")
-        self.exportToExcelButton.clicked.connect(self.export_to_excel)
+        self.yearLineEdit.setPlaceholderText("مثال: ۱۴۰۴")
 
+        # اتصال سیگنال‌ها به اسلات‌ها
+        self.exportToExcelButton.clicked.connect(self.export_to_excel)
         self.generateReportButton.clicked.connect(self.generate_report)
         self.backButton.clicked.connect(self.close)
+        self.exportToExcelYearlyButton.clicked.connect(self.export_to_excel_yearly)
+        self.generateYearlyReportButton.clicked.connect(self.generate_yearly_report)
 
-        self.expenseChartLayout = QVBoxLayout(self.expenseChartContainer)
-        self.incomeChartLayout = QVBoxLayout(self.incomeChartContainer)
+        # ساخت layout برای نمودار روند داخل container موجود در ui
+        self.TrendChartLayout = QVBoxLayout()
+        self.TrendChartContainer.setLayout(self.TrendChartLayout)
+        self.TrendChartContainer.setStyleSheet("background-color: #eefaff;")
+
+        # ساخت layout برای سایر نمودارها
+        self.expenseChartLayout = QVBoxLayout()
+        self.expenseChartContainer.setLayout(self.expenseChartLayout)
+
+        self.incomeChartLayout = QVBoxLayout()
+        self.incomeChartContainer.setLayout(self.incomeChartLayout)
+
 
     def fa_to_en(self, text):
         fa_digits = '۰۱۲۳۴۵۶۷۸۹'
@@ -527,6 +552,7 @@ class FinancialReportPage(QWidget):
         conn = dbfunctions.connect()
         cursor = conn.cursor()
 
+        # مجموع درآمد و هزینه
         cursor.execute("""
             SELECT SUM(t.amount)
             FROM transactions t
@@ -547,6 +573,7 @@ class FinancialReportPage(QWidget):
         self.totalExpenseLabel.setText(f"{expense:,} ریال")
         self.netBalanceLabel.setText(f"{(income - expense):,} ریال")
 
+        # جزئیات تراکنش‌ها در جدول دسته‌بندی
         cursor.execute("""
             SELECT c.name, c.type, t.amount, t.date
             FROM transactions t
@@ -572,21 +599,43 @@ class FinancialReportPage(QWidget):
             for j in range(4):
                 self.categoryTable.item(i, j).setTextAlignment(Qt.AlignCenter)
 
+        # موجودی حساب‌ها
         cursor.execute("""
             SELECT a.name,
-                   SUM(CASE WHEN c.type = 'expense' THEN -t.amount ELSE t.amount END)
+                SUM(CASE WHEN c.type = 'expense' THEN -t.amount ELSE t.amount END)
             FROM transactions t
             JOIN accounts a ON t.account_id = a.id
             JOIN categories c ON t.category_id = c.id
             WHERE t.date BETWEEN ? AND ?
             GROUP BY a.name
         """, (from_date, to_date))
-        rows = cursor.fetchall()
-        self.accountTable.setRowCount(len(rows))
+        acc_rows = cursor.fetchall()
+        self.accountTable.setRowCount(len(acc_rows))
         self.accountTable.setColumnCount(2)
         self.accountTable.setHorizontalHeaderLabels(["حساب", "موجودی"])
 
-        for i, (acc, amt) in enumerate(rows):
+        # درآمدها بر اساس دسته‌بندی
+        cursor.execute("""
+            SELECT c.name, SUM(t.amount) AS total_income
+            FROM transactions t
+            JOIN categories c ON t.category_id = c.id
+            WHERE c.type = 'income' AND t.date BETWEEN ? AND ?
+            GROUP BY c.name
+            ORDER BY total_income DESC
+        """, (from_date, to_date))
+        income_rows = cursor.fetchall()
+        self.categoryincomeTable.setRowCount(len(income_rows))
+        self.categoryincomeTable.setColumnCount(2)
+        self.categoryincomeTable.setHorizontalHeaderLabels(["دسته‌بندی", "مجموع درآمد"])
+
+        for i, (cat_name, total) in enumerate(income_rows):
+            total_text = f"{total:,} ریال" if total else "۰ ریال"
+            self.categoryincomeTable.setItem(i, 0, QTableWidgetItem(cat_name))
+            self.categoryincomeTable.setItem(i, 1, QTableWidgetItem(total_text))
+            for j in range(2):
+                self.categoryincomeTable.item(i, j).setTextAlignment(Qt.AlignCenter)
+
+        for i, (acc, amt) in enumerate(acc_rows):
             amount_text = f"{abs(amt):,} ریال"
             if amt < 0:
                 amount_text = f"({amount_text})"
@@ -595,9 +644,157 @@ class FinancialReportPage(QWidget):
             for j in range(2):
                 self.accountTable.item(i, j).setTextAlignment(Qt.AlignCenter)
 
+        # هزینه‌ها بر اساس دسته‌بندی
+        cursor.execute("""
+            SELECT c.name, SUM(t.amount) AS total_expense
+            FROM transactions t
+            JOIN categories c ON t.category_id = c.id
+            WHERE c.type = 'expense' AND t.date BETWEEN ? AND ?
+            GROUP BY c.name
+            ORDER BY total_expense DESC
+        """, (from_date, to_date))
+        category_rows = cursor.fetchall()
+        self.categorycostTable.setRowCount(len(category_rows))
+        self.categorycostTable.setColumnCount(2)
+        self.categorycostTable.setHorizontalHeaderLabels(["دسته‌بندی", "مجموع هزینه"])
+
+        for i, (cat_name, total) in enumerate(category_rows):
+            total_text = f"{total:,} ریال" if total else "۰ ریال"
+            self.categorycostTable.setItem(i, 0, QTableWidgetItem(cat_name))
+            self.categorycostTable.setItem(i, 1, QTableWidgetItem(total_text))
+            for j in range(2):
+                self.categorycostTable.item(i, j).setTextAlignment(Qt.AlignCenter)
+
         conn.close()
         self.show_expense_chart()
         self.show_income_chart()
+        self.show_trend_chart()
+
+    def generate_yearly_report(self):
+        # دریافت و اعتبارسنجی سال ورودی
+        year_raw = self.yearLineEdit.text().strip()
+        year = self.fa_to_en(year_raw)
+
+        if not year or not year.isdigit():
+            show_messagebox(self, "خطا", "لطفاً سال معتبر وارد کنید", QMessageBox.Warning)
+            return
+
+        like_pattern = f"{year}/%"
+        from_date = f"{year}/01/01"
+        to_date = f"{year}/12/29"
+
+        # اتصال به پایگاه داده
+        conn = dbfunctions.connect()
+        cursor = conn.cursor()
+
+        # ⚙️ تراکنش‌های سالیانه با جزئیات دسته‌بندی
+        cursor.execute("""
+            SELECT c.name, c.type, t.amount, t.date
+            FROM transactions t
+            JOIN categories c ON t.category_id = c.id
+            WHERE t.date LIKE ?
+            ORDER BY t.date ASC
+        """, (like_pattern,))
+        rows = cursor.fetchall()
+
+        self.categoryTable.setRowCount(len(rows))
+        self.categoryTable.setColumnCount(4)
+        self.categoryTable.setHorizontalHeaderLabels(["دسته", "نوع", "مبلغ", "تاریخ"])
+
+        total_income, total_expense = 0, 0
+
+        for i, (cat, typ, amt, date_str) in enumerate(rows):
+            type_fa = self.convert_type_to_farsi(typ)
+            amount_text = f"{amt:,} ریال"
+            if typ == "expense":
+                amount_text = f"({amount_text})"
+                total_expense += amt
+            else:
+                total_income += amt
+
+            self.categoryTable.setItem(i, 0, QTableWidgetItem(cat))
+            self.categoryTable.setItem(i, 1, QTableWidgetItem(type_fa))
+            self.categoryTable.setItem(i, 2, QTableWidgetItem(amount_text))
+            self.categoryTable.setItem(i, 3, QTableWidgetItem(date_str))
+            for j in range(4):
+                self.categoryTable.item(i, j).setTextAlignment(Qt.AlignCenter)
+
+        self.totalIncomeLabel.setText(f"{total_income:,} ریال")
+        self.totalExpenseLabel.setText(f"{total_expense:,} ریال")
+        self.netBalanceLabel.setText(f"{(total_income - total_expense):,} ریال")
+
+        # 📊 موجودی حساب‌ها سالیانه
+        cursor.execute("""
+            SELECT a.name,
+                SUM(CASE WHEN c.type = 'expense' THEN -t.amount ELSE t.amount END)
+            FROM transactions t
+            JOIN accounts a ON t.account_id = a.id
+            JOIN categories c ON t.category_id = c.id
+            WHERE t.date LIKE ?
+            GROUP BY a.name
+        """, (like_pattern,))
+        acc_rows = cursor.fetchall()
+        self.accountTable.setRowCount(len(acc_rows))
+        self.accountTable.setColumnCount(2)
+        self.accountTable.setHorizontalHeaderLabels(["حساب", "موجودی"])
+
+        for i, (acc, amt) in enumerate(acc_rows):
+            amount_text = f"{abs(amt):,} ریال"
+            if amt < 0:
+                amount_text = f"({amount_text})"
+            self.accountTable.setItem(i, 0, QTableWidgetItem(acc))
+            self.accountTable.setItem(i, 1, QTableWidgetItem(amount_text))
+            for j in range(2):
+                self.accountTable.item(i, j).setTextAlignment(Qt.AlignCenter)
+
+        # 💰 درآمدها بر اساس دسته‌بندی در بازه سال
+        cursor.execute("""
+            SELECT c.name, SUM(t.amount) AS total_income
+            FROM transactions t
+            JOIN categories c ON t.category_id = c.id
+            WHERE c.type = 'income' AND t.date BETWEEN ? AND ?
+            GROUP BY c.name
+            ORDER BY total_income DESC
+        """, (from_date, to_date))
+        income_rows = cursor.fetchall()
+        self.categoryincomeTable.setRowCount(len(income_rows))
+        self.categoryincomeTable.setColumnCount(2)
+        self.categoryincomeTable.setHorizontalHeaderLabels(["دسته‌بندی", "مجموع درآمد"])
+
+        for i, (cat_name, total) in enumerate(income_rows):
+            total_text = f"{total:,} ریال" if total else "۰ ریال"
+            self.categoryincomeTable.setItem(i, 0, QTableWidgetItem(cat_name))
+            self.categoryincomeTable.setItem(i, 1, QTableWidgetItem(total_text))
+            for j in range(2):
+                self.categoryincomeTable.item(i, j).setTextAlignment(Qt.AlignCenter)
+
+        # 💸 هزینه‌ها بر اساس دسته‌بندی در سال
+        cursor.execute("""
+            SELECT c.name, SUM(t.amount) AS total_expense
+            FROM transactions t
+            JOIN categories c ON t.category_id = c.id
+            WHERE c.type = 'expense' AND t.date LIKE ?
+            GROUP BY c.name
+            ORDER BY total_expense DESC
+        """, (like_pattern,))
+        cat_rows = cursor.fetchall()
+        self.categorycostTable.setRowCount(len(cat_rows))
+        self.categorycostTable.setColumnCount(2)
+        self.categorycostTable.setHorizontalHeaderLabels(["دسته‌بندی", "مجموع هزینه"])
+
+        for i, (cat_name, total) in enumerate(cat_rows):
+            total_text = f"{total:,} ریال" if total else "۰ ریال"
+            self.categorycostTable.setItem(i, 0, QTableWidgetItem(cat_name))
+            self.categorycostTable.setItem(i, 1, QTableWidgetItem(total_text))
+            for j in range(2):
+                self.categorycostTable.item(i, j).setTextAlignment(Qt.AlignCenter)
+
+        conn.close()
+
+        # 📈 رسم نمودارهای سالیانه
+        self.show_expense_chart()
+        self.show_income_chart()
+        self.show_trend_chart()
 
     def show_expense_chart(self):
         while self.expenseChartLayout.count():
@@ -634,6 +831,7 @@ class FinancialReportPage(QWidget):
         chart_view = QChartView(chart)
         chart_view.setRenderHint(QPainter.Antialiasing)
         chart_view.setMinimumHeight(150)
+        chart_view.setStyleSheet("border: none;")
         self.expenseChartLayout.addWidget(chart_view)
 
     def show_income_chart(self):
@@ -672,6 +870,147 @@ class FinancialReportPage(QWidget):
         chart_view.setRenderHint(QPainter.Antialiasing)
         chart_view.setMinimumHeight(150)
         self.incomeChartLayout.addWidget(chart_view)
+        chart_view.setStyleSheet("border: none;")
+
+    def parse_year_to_range(self, year_text):
+        try:
+            year_int = int(year_text)
+            from_date = datetime.strptime(f"{year_int}/01/01", "%Y/%m/%d")
+            to_date = datetime.strptime(f"{year_int}/12/29", "%Y/%m/%d")
+            return from_date, to_date
+        except:
+            return None, None
+
+    def show_trend_chart(self):
+        # پاک‌سازی قبلی
+        while self.TrendChartLayout.count():
+            child = self.TrendChartLayout.takeAt(0)
+            if child.widget():
+                child.widget().deleteLater()
+
+        monthly_income = {}
+        monthly_expense = {}
+
+        # 🧠 تعیین بازه بر اساس ورودی کاربر (سال یا تاریخ)
+        year_text = self.yearLineEdit.text().strip()
+        from_text = self.fromLineEdit.text().strip()
+        to_text = self.toLineEdit.text().strip()
+
+        if year_text:
+            from_date, to_date = self.parse_year_to_range(year_text)
+        elif from_text and to_text:
+            try:
+                from_date = datetime.strptime(from_text, "%Y/%m/%d")
+                to_date = datetime.strptime(to_text, "%Y/%m/%d")
+            except:
+                label = QLabel("فرمت تاریخ وارد شده نامعتبر است")
+                label.setAlignment(Qt.AlignCenter)
+                label.setStyleSheet("color: #c00; font-size: 14px; padding: 10px;")
+                self.TrendChartLayout.addWidget(label)
+                return
+        else:
+            label = QLabel("لطفاً یا سال یا بازهٔ زمانی را وارد کنید")
+            label.setAlignment(Qt.AlignCenter)
+            label.setStyleSheet("color: #555; font-size: 14px; padding: 10px;")
+            self.TrendChartLayout.addWidget(label)
+            return
+
+        # 📅 ساخت لیست ماه‌ها
+        labels = []
+        current = from_date.replace(day=1)
+        while current <= to_date:
+            label = f"{str(current.year)[-2:]}/{current.month:02d}"  # ← سال/ماه
+            labels.append(label)
+            current += relativedelta(months=1)
+
+        # 💳 استخراج داده‌های مربوط از جدول
+        for i in range(self.categoryTable.rowCount()):
+            type_item = self.categoryTable.item(i, 1)
+            amount_item = self.categoryTable.item(i, 2)
+            date_item = self.categoryTable.item(i, 3)
+
+            if not type_item or not amount_item or not date_item:
+                continue
+
+            date_text = date_item.text().strip()
+            try:
+                transaction_date = datetime.strptime(date_text, "%Y/%m/%d")
+            except:
+                continue
+
+            if transaction_date < from_date or transaction_date > to_date:
+                continue
+
+            key = f"{str(transaction_date.year)[-2:]}/{transaction_date.month:02d}"  # ← سال/ماه
+            type_fa = type_item.text().strip()
+            amount_text = amount_item.text().replace("ریال", "").replace(",", "").replace("(", "").replace(")", "").strip()
+            try:
+                amount = int(amount_text)
+            except:
+                continue
+
+            if type_fa == "درآمد":
+                monthly_income[key] = monthly_income.get(key, 0) + amount
+            elif type_fa == "هزینه":
+                monthly_expense[key] = monthly_expense.get(key, 0) + amount
+
+        # ⛔ اگر هیچ داده‌ای نبود
+        total = sum(monthly_income.values()) + sum(monthly_expense.values())
+        if total == 0:
+            label = QLabel("هیچ درآمد یا هزینه‌ای برای نمایش در نمودار نیست")
+            label.setAlignment(Qt.AlignCenter)
+            label.setStyleSheet("color: #555; font-size: 16px; padding: 20px;")
+            self.TrendChartLayout.addWidget(label)
+            return
+
+        # 📈 ساخت سری‌های نمودار
+        income_series = QLineSeries()
+        income_series.setName("درآمد ماهانه")
+
+        expense_series = QLineSeries()
+        expense_series.setName("هزینه ماهانه")
+
+        for idx, label in enumerate(labels):
+            income_val = monthly_income.get(label, 0)
+            expense_val = monthly_expense.get(label, 0)
+            income_series.append(idx, income_val)
+            expense_series.append(idx, expense_val)
+
+        # 📊 ساخت نمودار و محور‌ها
+        chart = QChart()
+        chart.addSeries(income_series)
+        chart.addSeries(expense_series)
+        chart.setTitle("روند مالی ماهانه")
+        chart.legend().setAlignment(Qt.AlignBottom)
+
+        # محور افقی
+        axisX = QCategoryAxis()
+        axisX.setLabelsPosition(QCategoryAxis.AxisLabelsPositionOnValue)
+        font = QFont()
+        font.setPointSize(8)  # سایز فونت لیبل‌ها
+        axisX.setLabelsFont(font)
+        for idx, label in enumerate(labels):
+            axisX.append(label, idx)
+        chart.addAxis(axisX, Qt.AlignBottom)
+        income_series.attachAxis(axisX)
+        expense_series.attachAxis(axisX)
+
+        # محور عمودی
+        axisY = QValueAxis()
+        axisY.setLabelFormat("%d")
+        axisY.setTitleText("مبلغ (ریال)")
+        chart.addAxis(axisY, Qt.AlignLeft)
+        income_series.attachAxis(axisY)
+        expense_series.attachAxis(axisY)
+
+        # نمای نمودار
+        chart_view = QChartView(chart)
+        chart_view.setRenderHint(QPainter.Antialiasing)
+        chart_view.setMinimumHeight(200)
+        chart_view.setStyleSheet("border: none;")
+        chart.setBackgroundBrush(QColor("#ffffff"))
+
+        self.TrendChartLayout.addWidget(chart_view)
 
     def export_to_excel(self):
 
@@ -745,6 +1084,310 @@ class FinancialReportPage(QWidget):
         except Exception as e:
             print("خطا:", str(e))
             show_messagebox(self, "خطا", f"خطا در ذخیره فایل اکسل:\n{str(e)}", QMessageBox.Critical)
+
+    def export_to_excel_yearly(self):
+        try:
+            if self.categoryTable.rowCount() == 0:
+                show_messagebox(self, "هشدار", "ابتدا گزارش سالیانه را تولید کنید.", QMessageBox.Warning)
+                return
+
+            # جمع کردن درآمد و هزینه هر ماه
+            monthly_data = {}
+            for i in range(self.categoryTable.rowCount()):
+                date_str = self.categoryTable.item(i, 3).text()
+                month = date_str.split("/")[1]  # assuming "YYYY/MM/DD"
+                typ = self.categoryTable.item(i, 1).text()
+                amount_text = self.categoryTable.item(i, 2).text().replace("ریال", "").replace(",", "").replace("(", "").replace(")", "").strip()
+
+                try:
+                    amt = int(amount_text)
+                except:
+                    amt = 0
+
+                if month not in monthly_data:
+                    monthly_data[month] = {"income": 0, "expense": 0}
+                if typ == "درآمد":
+                    monthly_data[month]["income"] += amt
+                elif typ == "هزینه":
+                    monthly_data[month]["expense"] += amt
+
+            # ساخت اکسل
+            wb = Workbook()
+            ws = wb.active
+            ws.title = "گزارش سالیانه"
+            ws.sheet_view.rightToLeft = True
+            bnazanin_font = Font(name="BNazanin", size=12)
+
+            ws.append(["ماه", "درآمد", "هزینه", "مانده"])
+            for cell in ws[1]:
+                cell.alignment = Alignment(horizontal="center")
+                cell.font = bnazanin_font
+
+            for month in sorted(monthly_data.keys(), key=lambda x: int(x)):
+                income = monthly_data[month]["income"]
+                expense = monthly_data[month]["expense"]
+                balance = income - expense
+                ws.append([f"ماه {int(month)}", income, expense, balance])
+
+            for row in ws.iter_rows(min_row=2, max_row=ws.max_row):
+                for cell in row:
+                    cell.alignment = Alignment(horizontal="center")
+                    cell.font = bnazanin_font
+
+            for col in ws.columns:
+                max_length = max(len(str(cell.value)) for cell in col if cell.value)
+                ws.column_dimensions[col[0].column_letter].width = max_length + 3
+
+            year = self.fa_to_en(self.yearLineEdit.text().strip())
+            desktop_path = os.path.join(os.path.expanduser("~"), "Desktop")
+            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+            filename = f"خلاصه سالیانه_{year}_{timestamp}.xlsx"
+            full_path = os.path.join(desktop_path, filename)
+            wb.save(full_path)
+
+            show_messagebox(self, "موفقیت", f"فایل اکسل با موفقیت روی دسکتاپ ذخیره شد:\n{full_path}", QMessageBox.Information)
+            if os.name == "posix":
+                subprocess.call(["open", full_path])
+            elif os.name == "nt":
+                os.startfile(full_path)
+
+        except Exception as e:
+            print("خطا:", str(e))
+            show_messagebox(self, "خطا", f"خطا در ذخیره فایل اکسل:\n{str(e)}", QMessageBox.Critical)
+
+
+class EventsPage(QtWidgets.QWidget):
+    def __init__(self):
+        super().__init__()
+        uic.loadUi(resource_path("ui/events.ui"), self)
+
+        self.conn = sqlite3.connect("accounting.db")
+        self.cursor = self.conn.cursor()
+
+        self.eventsTable.setSelectionBehavior(QtWidgets.QTableView.SelectRows)
+        self.eventsTable.setSelectionMode(QtWidgets.QAbstractItemView.SingleSelection)
+
+
+        self.eventsTable.setEditTriggers(
+            QtWidgets.QAbstractItemView.DoubleClicked |
+            QtWidgets.QAbstractItemView.SelectedClicked
+        )
+
+        self.typeComboBox.setEditable(False)
+        self.typeComboBox.addItems(["همه", "درآمد", "هزینه"])
+        self.typeComboBox.currentIndexChanged.connect(self.update_category_combo)
+        self.CostLineEdit.textChanged.connect(self.format_amount)
+        self.searchButton.clicked.connect(self.search_events)
+        self.editButton.clicked.connect(self.save_changes)
+        self.removeButton.clicked.connect(self.remove_selected_event)
+        self.backbutton.clicked.connect(self.close)
+
+        self.update_category_combo()
+        self.load_accounts()
+        self.load_events()
+
+    def fa_to_en(self, text):
+        fa_digits = '۰۱۲۳۴۵۶۷۸۹'
+        en_digits = '0123456789'
+        return text.translate(str.maketrans(fa_digits, en_digits))
+
+    def format_amount(self, text):
+        raw = self.fa_to_en(text).replace(",", "")
+        if raw.isdigit():
+            formatted = "{:,}".format(int(raw))
+            cursor_pos = self.CostLineEdit.cursorPosition()
+            self.CostLineEdit.blockSignals(True)
+            self.CostLineEdit.setText(formatted)
+            self.CostLineEdit.blockSignals(False)
+            delta = len(formatted) - len(raw)
+            self.CostLineEdit.setCursorPosition(cursor_pos + delta)
+
+    def update_category_combo(self):
+        selected_type = self.typeComboBox.currentText().strip()
+        self.categoryComboBox.clear()
+        self.categoryComboBox.addItem("همه")
+
+        if selected_type == "همه":
+            self.cursor.execute("SELECT name FROM categories")
+        else:
+            db_type = 'income' if selected_type == "درآمد" else "expense"
+            self.cursor.execute("SELECT name FROM categories WHERE type = ?", (db_type,))
+        rows = self.cursor.fetchall()
+        for row in rows:
+            self.categoryComboBox.addItem(row[0])
+
+    def load_accounts(self):
+        self.accountComboBox.clear()
+        self.accountComboBox.addItem("همه")
+
+        self.cursor.execute("SELECT name FROM accounts")
+        rows = self.cursor.fetchall()
+        for row in rows:
+            self.accountComboBox.addItem(row[0])
+
+    def load_events(self):
+        self.cursor.execute("""
+            SELECT transactions.id, date,
+                   (SELECT name FROM categories WHERE id = category_id),
+                   amount,
+                   (SELECT name FROM accounts WHERE id = account_id),
+                   description
+            FROM transactions
+        """)
+        rows = self.cursor.fetchall()
+        self.populate_table(rows)
+
+    def search_events(self):
+        query = """
+            SELECT transactions.id, date,
+                   (SELECT name FROM categories WHERE id = category_id),
+                   amount,
+                   (SELECT name FROM accounts WHERE id = account_id),
+                   description
+            FROM transactions
+            WHERE 1=1
+        """
+        params = []
+
+        if self.fromLineEdit.text():
+            query += " AND date >= ?"
+            params.append(self.fa_to_en(self.fromLineEdit.text()))
+
+        if self.toLineEdit.text():
+            query += " AND date <= ?"
+            params.append(self.fa_to_en(self.toLineEdit.text()))
+
+        selected_type = self.typeComboBox.currentText().strip()
+        if selected_type != "همه":
+            db_type = 'income' if selected_type == "درآمد" else "expense"
+            query += " AND category_id IN (SELECT id FROM categories WHERE type = ?)"
+            params.append(db_type)
+
+        selected_category = self.categoryComboBox.currentText().strip()
+        if selected_category != "همه":
+            query += " AND category_id IN (SELECT id FROM categories WHERE name = ?)"
+            params.append(selected_category)
+
+        selected_account = self.accountComboBox.currentText().strip()
+        if selected_account != "همه":
+            query += " AND account_id IN (SELECT id FROM accounts WHERE name = ?)"
+            params.append(selected_account)
+
+        if self.CostLineEdit.text():
+            raw_amount = self.fa_to_en(self.CostLineEdit.text().replace(",", ""))
+            query += " AND amount = ?"
+            params.append(raw_amount)
+
+        self.cursor.execute(query, params)
+        rows = self.cursor.fetchall()
+        self.populate_table(rows)
+
+    def load_category_types(self):
+        self.cursor.execute("SELECT name, type FROM categories")
+        rows = self.cursor.fetchall()
+        return {name: type_ for name, type_ in rows}
+
+    def populate_table(self, data):
+        category_types = self.load_category_types()  # گرفتن نوع دسته‌بندی‌ها
+
+        self.eventsTable.setLayoutDirection(QtCore.Qt.RightToLeft)
+        self.eventsTable.setColumnCount(7)
+        self.eventsTable.setHorizontalHeaderLabels([
+            "شناسه", "تاریخ", "نوع رویداد", "دسته‌بندی", "مبلغ", "حساب", "توضیحات"
+        ])
+        self.eventsTable.setRowCount(len(data))
+
+        for i, row in enumerate(data):
+            if len(row) < 6:
+                continue
+
+            category_name = row[2]
+            category_type = category_types.get(category_name, "—")
+            event_type = "درآمد" if category_type == "income" else "هزینه" if category_type == "expense" else "—"
+
+            reordered_row = [
+                row[0],         # شناسه
+                row[1],         # تاریخ
+                event_type,     # نوع رویداد (بین تاریخ و دسته‌بندی)
+                category_name,  # دسته‌بندی
+                row[3],         # مبلغ
+                row[4],         # حساب
+                row[5],         # توضیحات
+            ]
+
+            for j, item in enumerate(reordered_row):
+                value = str(item)
+                if j == 4:  # ستون مبلغ
+                    try:
+                        value = "{:,}".format(int(str(row[3]).replace(",", "")))
+                    except:
+                        pass
+
+                cell = QtWidgets.QTableWidgetItem(value)
+                cell.setTextAlignment(QtCore.Qt.AlignCenter)
+
+                if j == 0:  # ستون شناسه غیرقابل ویرایش
+                    cell.setFlags(QtCore.Qt.ItemIsSelectable | QtCore.Qt.ItemIsEnabled)
+
+                self.eventsTable.setItem(i, j, cell)
+
+    def save_changes(self):
+        for row in range(self.eventsTable.rowCount()):
+            event_id = self.eventsTable.item(row, 0).text()
+            date = self.fa_to_en(self.eventsTable.item(row, 1).text())
+            category = self.eventsTable.item(row, 2).text()
+            amount = self.fa_to_en(self.eventsTable.item(row, 3).text().replace(",", ""))
+            account = self.eventsTable.item(row, 4).text()
+            description = self.eventsTable.item(row, 5).text()
+
+            self.cursor.execute("SELECT id FROM categories WHERE name = ?", (category,))
+            category_id = self.cursor.fetchone()
+            self.cursor.execute("SELECT id FROM accounts WHERE name = ?", (account,))
+            account_id = self.cursor.fetchone()
+
+            if category_id and account_id:
+                self.cursor.execute("""
+                    UPDATE transactions
+                    SET date=?, category_id=?, amount=?, account_id=?, description=?
+                    WHERE id=?
+                """, (date, category_id[0], amount, account_id[0], description, event_id))
+
+        self.conn.commit()
+        QtWidgets.QMessageBox.information(self, "ذخیره تغییرات", "تغییرات با موفقیت ذخیره شد.")
+
+    def remove_selected_event(self):
+        row = self.eventsTable.currentRow()
+        print("Current row is:", self.eventsTable.currentRow())
+        if row == -1:
+            QtWidgets.QMessageBox.warning(self, "هشدار", "لطفاً یک رویداد را انتخاب کنید.")
+            return
+
+        id_item = self.eventsTable.item(row, 0)
+        if id_item is None:
+            QtWidgets.QMessageBox.warning(self, "خطا", "شناسهٔ رویداد یافت نشد.")
+            return
+
+        event_id = id_item.text().strip()
+        if not event_id:
+            QtWidgets.QMessageBox.warning(self, "خطا", "شناسهٔ رویداد نامعتبر است.")
+            return
+
+        confirm = QtWidgets.QMessageBox.question(
+            self, "حذف رویداد",
+            "آیا مطمئن هستید که می‌خواهید این رویداد حذف شود؟",
+            QtWidgets.QMessageBox.Yes | QtWidgets.QMessageBox.No
+        )
+
+        if confirm == QtWidgets.QMessageBox.Yes:
+            try:
+                self.cursor.execute("DELETE FROM transactions WHERE id = ?", (event_id,))
+                self.conn.commit()
+                self.eventsTable.removeRow(row)
+                QtWidgets.QMessageBox.information(self, "موفقیت", "رویداد با موفقیت حذف شد.")
+            except Exception as e:
+                QtWidgets.QMessageBox.critical(self, "خطا", f"در حذف رویداد مشکلی پیش آمد:\n{e}")
+
+
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)

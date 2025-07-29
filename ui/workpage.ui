@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>318</width>
-    <height>284</height>
+    <width>330</width>
+    <height>334</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -23,9 +23,9 @@
   <widget class="QPushButton" name="ConfirmEventButton">
    <property name="geometry">
     <rect>
-     <x>90</x>
+     <x>80</x>
      <y>80</y>
-     <width>151</width>
+     <width>171</width>
      <height>32</height>
     </rect>
    </property>
@@ -51,7 +51,7 @@ QPushButton:hover {
   <widget class="QLabel" name="fullnamelabel">
    <property name="geometry">
     <rect>
-     <x>10</x>
+     <x>20</x>
      <y>20</y>
      <width>291</width>
      <height>21</height>
@@ -75,9 +75,9 @@ QLabel {
   <widget class="QPushButton" name="AccountsButton">
    <property name="geometry">
     <rect>
-     <x>90</x>
+     <x>80</x>
      <y>140</y>
-     <width>151</width>
+     <width>171</width>
      <height>32</height>
     </rect>
    </property>
@@ -103,9 +103,9 @@ QPushButton:hover {
   <widget class="QPushButton" name="FinancialReportButton">
    <property name="geometry">
     <rect>
-     <x>90</x>
-     <y>200</y>
-     <width>151</width>
+     <x>80</x>
+     <y>260</y>
+     <width>171</width>
      <height>32</height>
     </rect>
    </property>
@@ -126,6 +126,34 @@ QPushButton:hover {
    </property>
    <property name="text">
     <string>گزارش مالی</string>
+   </property>
+  </widget>
+  <widget class="QPushButton" name="EventsButton">
+   <property name="geometry">
+    <rect>
+     <x>80</x>
+     <y>200</y>
+     <width>171</width>
+     <height>32</height>
+    </rect>
+   </property>
+   <property name="styleSheet">
+    <string notr="true">QPushButton {
+	font: 16pt &quot;.AppleSystemUIFont&quot;;
+    background-color:rgb(109, 171, 231);
+    color: white;
+    border-radius: 6px;
+    padding: 6px 12px;
+    font-weight: bold;
+}
+QPushButton:hover {
+    background-color: rgb(109, 160, 200);
+}
+
+</string>
+   </property>
+   <property name="text">
+    <string>رویدادهای مالی</string>
    </property>
   </widget>
  </widget>
