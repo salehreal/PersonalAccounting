@@ -20,6 +20,8 @@ from openpyxl.styles import Alignment, Font
 from datetime import datetime, date
 from PyQt5.QtChart import QChart, QChartView, QPieSeries
 from dateutil.relativedelta import relativedelta
+from dbfunctions import remove_category
+from dbfunctions import connect
 
 
 def resource_path(relative_path):
@@ -238,8 +240,22 @@ class OtpPage(QWidget):
             try:
                 user_id = int(user_id)
             except Exception:
-                show_messagebox(self, "خطا", "شناسه کاربر نامعتبر است!", QMessageBox.Warning)
+                error_text = (
+                    "<b style='color:#c00;'>خطا:</b><br>"
+                    "شناسه کاربر نامعتبر است!<br><br>"
+                )
+
+                msgbox = QtWidgets.QMessageBox()
+                msgbox.setIcon(QtWidgets.QMessageBox.Warning)
+                msgbox.setWindowTitle("خطا")
+                msgbox.setTextFormat(QtCore.Qt.RichText)
+                msgbox.setText(error_text)
+                msgbox.setStandardButtons(QtWidgets.QMessageBox.Ok)
+                msgbox.setDefaultButton(QtWidgets.QMessageBox.Ok)
+                msgbox.exec()
+                
                 return
+
 
             self.confirmbutton.setText("تأیید شد")
             global window5
@@ -262,7 +278,20 @@ class WorkPage(QWidget):
         try:
             user_id = int(user_id)
         except Exception:
-            show_messagebox(self, "خطا", "شناسه کاربر نامعتبر است", QMessageBox.Warning)
+            error_text = (
+                "<b style='color:#c00;'>خطا:</b><br>"
+                "شناسه کاربر نامعتبر است<br><br>"
+            )
+
+            msgbox = QtWidgets.QMessageBox()
+            msgbox.setIcon(QtWidgets.QMessageBox.Warning)
+            msgbox.setWindowTitle("خطا")
+            msgbox.setTextFormat(QtCore.Qt.RichText)
+            msgbox.setText(error_text)
+            msgbox.setStandardButtons(QtWidgets.QMessageBox.Ok)
+            msgbox.setDefaultButton(QtWidgets.QMessageBox.Ok)
+            msgbox.exec()
+
             user_id = None
 
         fullname = get_user_fullname(user_id) if user_id is not None else "--"
@@ -272,6 +301,7 @@ class WorkPage(QWidget):
         self.AccountsButton.clicked.connect(self.ShowAccountsPage)
         self.FinancialReportButton.clicked.connect(self.ShowFinancialReportPage)
         self.EventsButton.clicked.connect(self.ShowEventsPage)
+        self.CategoriesButton.clicked.connect(self.ShowCategoriesPage)
 
     def ShowIncomePage(self):
         global income_window
@@ -292,6 +322,11 @@ class WorkPage(QWidget):
         global report_window
         report_window = EventsPage()
         report_window.show()
+
+    def ShowCategoriesPage(self):
+        global categories_window
+        categories_window = CategoriesPage()
+        categories_window.show()
 
 
 class AddEventPage(QWidget):
@@ -374,15 +409,50 @@ class AddEventPage(QWidget):
         description = self.textEdit.toPlainText().strip()
 
         if not all([amount, type_value, category_name, account_name, date_text]):
-            show_messagebox(self, 'خطا', 'لطفاً همه فیلدهای اجباری را پر کنید', QMessageBox.Warning)
+            warning_text = (
+                "<b style='color:#c00;'>خطا:</b><br>"
+                "لطفاً همه فیلدهای اجباری را پر کنید<br><br>"
+            )
+
+            msgbox = QtWidgets.QMessageBox()
+            msgbox.setIcon(QtWidgets.QMessageBox.Warning)
+            msgbox.setWindowTitle("خطا")
+            msgbox.setTextFormat(QtCore.Qt.RichText)
+            msgbox.setText(warning_text)
+            msgbox.setStandardButtons(QtWidgets.QMessageBox.Ok)
+            msgbox.setDefaultButton(QtWidgets.QMessageBox.Ok)
+            msgbox.exec()
             return
 
         if not self.is_valid_jalali_date(date_text):
-            show_messagebox(self, 'خطا', 'فرمت تاریخ نامعتبر است. مثال: ۱۴۰۴/۰۴/۲۵', QMessageBox.Warning)
+            error_text = (
+                "<b style='color:#c00;'>خطا:</b><br>"
+                "فرمت تاریخ نامعتبر است.<br>"
+                "<i>مثال: ۱۴۰۴/۰۴/۲۵</i>"
+            )
+
+            msgbox = QtWidgets.QMessageBox()
+            msgbox.setIcon(QtWidgets.QMessageBox.Warning)
+            msgbox.setWindowTitle("خطا")
+            msgbox.setTextFormat(QtCore.Qt.RichText)
+            msgbox.setText(error_text)
+            msgbox.setStandardButtons(QtWidgets.QMessageBox.Ok)
+            msgbox.exec()
             return
 
         if not amount.isdigit():
-            show_messagebox(self, 'خطا', 'مبلغ باید فقط شامل عدد باشد', QMessageBox.Warning)
+            error_text = (
+                "<b style='color:#c00;'>خطا:</b><br>"
+                "مبلغ باید فقط شامل <b>عدد</b> باشد."
+            )
+
+            msgbox = QtWidgets.QMessageBox()
+            msgbox.setIcon(QtWidgets.QMessageBox.Warning)
+            msgbox.setWindowTitle("خطا")
+            msgbox.setTextFormat(QtCore.Qt.RichText)
+            msgbox.setText(error_text)
+            msgbox.setStandardButtons(QtWidgets.QMessageBox.Ok)
+            msgbox.exec()
             return
 
         db_type = 'income' if type_value == 'درآمد' else 'expense'
@@ -410,7 +480,18 @@ class AddEventPage(QWidget):
         conn.commit()
         conn.close()
 
-        show_messagebox(self, 'ثبت شد', 'رویداد با موفقیت ثبت شد', QMessageBox.Information)
+        success_text = (
+            "<b style='color:green;'>ثبت شد:</b><br>"
+            "<span style='color:#333;'>رویداد با موفقیت ثبت شد ✅</span>"
+        )
+
+        msgbox = QtWidgets.QMessageBox()
+        msgbox.setIcon(QtWidgets.QMessageBox.Information)
+        msgbox.setWindowTitle("ثبت موفق")
+        msgbox.setTextFormat(QtCore.Qt.RichText)
+        msgbox.setText(success_text)
+        msgbox.setStandardButtons(QtWidgets.QMessageBox.Ok)
+        msgbox.exec()
         self.close()
 
 
@@ -441,8 +522,20 @@ class AddAccountPage(QWidget):
     def add_account(self):
         name = self.accountLineEdit.text().strip()
         if not name:
-            show_messagebox(self, "خطا", "لطفاً نام حساب را وارد کنید", QMessageBox.Warning)
+            error_text = (
+                "<b style='color:#c00;'>خطا:</b><br>"
+                "لطفاً <b>نام حساب</b> را وارد کنید."
+            )
+
+            msgbox = QtWidgets.QMessageBox()
+            msgbox.setIcon(QtWidgets.QMessageBox.Warning)
+            msgbox.setWindowTitle("خطا")
+            msgbox.setTextFormat(QtCore.Qt.RichText)
+            msgbox.setText(error_text)
+            msgbox.setStandardButtons(QtWidgets.QMessageBox.Ok)
+            msgbox.exec()
             return
+
 
         conn = dbfunctions.connect()
         cursor = conn.cursor()
@@ -450,20 +543,45 @@ class AddAccountPage(QWidget):
         result = cursor.fetchone()
 
         if result:
-            show_messagebox(self, "", "این حساب قبلاً ثبت شده است", QMessageBox.Information)
+            info_text = (
+                "<b style='color:#f57c00;'>هشدار:</b><br>"
+                "<span style='color:#333;'>این حساب قبلاً ثبت شده است </span>"
+            )
         else:
             cursor.execute("INSERT INTO accounts (name) VALUES (?)", (name,))
             conn.commit()
-            show_messagebox(self, "ثبت شد", "حساب جدید با موفقیت اضافه شد", QMessageBox.Information)
+            info_text = (
+                "<b style='color:green;'>ثبت شد:</b><br>"
+                "<span style='color:#333;'>حساب جدید با موفقیت اضافه شد </span>"
+            )
             self.accountLineEdit.clear()
             self.load_accounts()
+
+        msgbox = QtWidgets.QMessageBox()
+        msgbox.setIcon(QtWidgets.QMessageBox.Information)
+        msgbox.setWindowTitle("اطلاع رسانی")
+        msgbox.setTextFormat(QtCore.Qt.RichText)
+        msgbox.setText(info_text)
+        msgbox.setStandardButtons(QtWidgets.QMessageBox.Ok)
+        msgbox.exec()
 
         conn.close()
 
     def delete_account(self):
         selected_item = self.accountListWidget.currentItem()
         if not selected_item:
-            show_messagebox(self, "خطا", "لطفاً یک حساب را برای حذف انتخاب کنید", QMessageBox.Warning)
+            error_text = (
+                "<b style='color:#c00;'>خطا:</b><br>"
+                "لطفاً یک <b>حساب</b> را برای حذف انتخاب کنید "
+            )
+
+            msgbox = QtWidgets.QMessageBox()
+            msgbox.setIcon(QtWidgets.QMessageBox.Warning)
+            msgbox.setWindowTitle("خطا")
+            msgbox.setTextFormat(QtCore.Qt.RichText)
+            msgbox.setText(error_text)
+            msgbox.setStandardButtons(QtWidgets.QMessageBox.Ok)
+            msgbox.exec()
             return
 
         account_name = selected_item.text()
@@ -479,12 +597,26 @@ class AddAccountPage(QWidget):
         count = cursor.fetchone()[0]
 
         if count > 0:
-            show_messagebox(self, "امکان حذف نیست", "این حساب در تراکنش ها استفاده شده و قابل حذف نیست", QMessageBox.Warning)
+            error_text = (
+                "<b style='color:#c00;'>امکان حذف نیست:</b><br>"
+                "<span style='color:#333;'>این حساب در <b>تراکنش‌ها</b> استفاده شده و قابل حذف نیست </span>"
+            )
         else:
             cursor.execute("DELETE FROM accounts WHERE name = ?", (account_name,))
             conn.commit()
-            show_messagebox(self, "حذف شد", "حساب با موفقیت حذف شد", QMessageBox.Information)
+            error_text = (
+                "<b style='color:green;'>حذف شد:</b><br>"
+                "<span style='color:#333;'>حساب با موفقیت حذف شد </span>"
+            )
             self.load_accounts()
+
+        msgbox = QtWidgets.QMessageBox()
+        msgbox.setIcon(QtWidgets.QMessageBox.Information)
+        msgbox.setWindowTitle("وضعیت حذف")
+        msgbox.setTextFormat(QtCore.Qt.RichText)
+        msgbox.setText(error_text)
+        msgbox.setStandardButtons(QtWidgets.QMessageBox.Ok)
+        msgbox.exec()
 
         conn.close()
 
@@ -536,11 +668,34 @@ class FinancialReportPage(QWidget):
         to_date = self.fa_to_en(self.toLineEdit.text().strip())
 
         if not from_date or not to_date:
-            show_messagebox(self, "خطا", "لطفاً بازه زمانی را کامل وارد کنید", QMessageBox.Warning)
+            error_text = (
+                "<b style='color:#c00;'>خطا:</b><br>"
+                "لطفاً <b>بازه زمانی</b> را کامل وارد کنید "
+            )
+
+            msgbox = QtWidgets.QMessageBox()
+            msgbox.setIcon(QtWidgets.QMessageBox.Warning)
+            msgbox.setWindowTitle("خطا")
+            msgbox.setTextFormat(QtCore.Qt.RichText)
+            msgbox.setText(error_text)
+            msgbox.setStandardButtons(QtWidgets.QMessageBox.Ok)
+            msgbox.exec()
             return
 
         if not self.is_valid_jalali_date(from_date) or not self.is_valid_jalali_date(to_date):
-            show_messagebox(self, "خطا", "تاریخ واردشده معتبر نیست. لطفاً مانند ۱۴۰۴/۰۴/۲۵ وارد کنید", QMessageBox.Warning)
+            error_text = (
+                "<b style='color:#c00;'>خطا:</b><br>"
+                "تاریخ واردشده معتبر نیست.<br>"
+                "<i>لطفاً مانند ۱۴۰۴/۰۴/۲۵ وارد کنید.</i> 📅"
+            )
+
+            msgbox = QtWidgets.QMessageBox()
+            msgbox.setIcon(QtWidgets.QMessageBox.Warning)
+            msgbox.setWindowTitle("خطا")
+            msgbox.setTextFormat(QtCore.Qt.RichText)
+            msgbox.setText(error_text)
+            msgbox.setStandardButtons(QtWidgets.QMessageBox.Ok)
+            msgbox.exec()
             return
 
         conn = dbfunctions.connect()
@@ -664,7 +819,18 @@ class FinancialReportPage(QWidget):
         year = self.fa_to_en(year_raw)
 
         if not year or not year.isdigit():
-            show_messagebox(self, "خطا", "لطفاً سال معتبر وارد کنید", QMessageBox.Warning)
+            error_text = (
+                "<b style='color:#c00;'>خطا:</b><br>"
+                "لطفاً یک <b>سال معتبر</b> وارد کنید"
+            )
+
+            msgbox = QtWidgets.QMessageBox()
+            msgbox.setIcon(QtWidgets.QMessageBox.Warning)
+            msgbox.setWindowTitle("خطا")
+            msgbox.setTextFormat(QtCore.Qt.RichText)
+            msgbox.setText(error_text)
+            msgbox.setStandardButtons(QtWidgets.QMessageBox.Ok)
+            msgbox.exec()
             return
 
         like_pattern = f"{year}/%"
@@ -955,7 +1121,6 @@ class FinancialReportPage(QWidget):
         chart = QChart()
         chart.addSeries(income_series)
         chart.addSeries(expense_series)
-        chart.setTitle("روند مالی ماهانه")
         chart.legend().setAlignment(Qt.AlignBottom)
 
         axisX = QCategoryAxis()
@@ -987,7 +1152,18 @@ class FinancialReportPage(QWidget):
     def export_to_excel(self):
         try:
             if self.categoryTable.rowCount() == 0:
-                show_messagebox(self, "هشدار", "ابتدا گزارش گیری کنید تا داده‌ها برای خروجی آماده شوند.", QMessageBox.Warning)
+                warning_text = (
+                    "<b style='color:#f57c00;'>هشدار:</b><br>"
+                    "<span style='color:#333;'>ابتدا <b>گزارش‌گیری</b> کنید تا داده‌ها برای خروجی آماده شوند.</span> "
+                )
+
+                msgbox = QtWidgets.QMessageBox()
+                msgbox.setIcon(QtWidgets.QMessageBox.Warning)
+                msgbox.setWindowTitle("هشدار")
+                msgbox.setTextFormat(QtCore.Qt.RichText)
+                msgbox.setText(warning_text)
+                msgbox.setStandardButtons(QtWidgets.QMessageBox.Ok)
+                msgbox.exec()
                 return
 
             wb = Workbook()
@@ -1045,7 +1221,19 @@ class FinancialReportPage(QWidget):
 
             wb.save(full_path)
 
-            show_messagebox(self, "موفقیت", f"فایل اکسل با موفقیت روی دسکتاپ ذخیره شد:\n{full_path}", QMessageBox.Information)
+            success_text = (
+                "<b style='color:green;'>موفقیت:</b><br>"
+                "فایل اکسل با موفقیت روی <b>دسکتاپ</b> ذخیره شد. <br><br>"
+                f"<span style='color:#555;'>{full_path}</span>"
+            )
+
+            msgbox = QtWidgets.QMessageBox()
+            msgbox.setIcon(QtWidgets.QMessageBox.Information)
+            msgbox.setWindowTitle("ذخیره‌سازی موفق")
+            msgbox.setTextFormat(QtCore.Qt.RichText)
+            msgbox.setText(success_text)
+            msgbox.setStandardButtons(QtWidgets.QMessageBox.Ok)
+            msgbox.exec()
 
             if os.name == "posix":
                 subprocess.call(["open", full_path])
@@ -1053,13 +1241,35 @@ class FinancialReportPage(QWidget):
                 os.startfile(full_path)
 
         except Exception as e:
-            print("خطا:", str(e))
-            show_messagebox(self, "خطا", f"خطا در ذخیره فایل اکسل:\n{str(e)}", QMessageBox.Critical)
+            error_text = (
+                "<b style='color:#c00;'>خطا:</b><br>"
+                "خطا در <b>ذخیره فایل اکسل</b> رخ داد <br><br>"
+                f"<span style='color:#555;'>{str(e)}</span>"
+            )
+
+            msgbox = QtWidgets.QMessageBox()
+            msgbox.setIcon(QtWidgets.QMessageBox.Critical)
+            msgbox.setWindowTitle("خطای سیستمی")
+            msgbox.setTextFormat(QtCore.Qt.RichText)
+            msgbox.setText(error_text)
+            msgbox.setStandardButtons(QtWidgets.QMessageBox.Ok)
+            msgbox.exec()
 
     def export_to_excel_yearly(self):
         try:
             if self.categoryTable.rowCount() == 0:
-                show_messagebox(self, "هشدار", "ابتدا گزارش سالیانه را تولید کنید.", QMessageBox.Warning)
+                warning_text = (
+                    "<b style='color:#f57c00;'>هشدار:</b><br>"
+                    "<span style='color:#333;'>ابتدا <b>گزارش سالیانه</b> را تولید کنید. </span>"
+                )
+
+                msgbox = QtWidgets.QMessageBox()
+                msgbox.setIcon(QtWidgets.QMessageBox.Warning)
+                msgbox.setWindowTitle("هشدار")
+                msgbox.setTextFormat(QtCore.Qt.RichText)
+                msgbox.setText(warning_text)
+                msgbox.setStandardButtons(QtWidgets.QMessageBox.Ok)
+                msgbox.exec()
                 return
 
             monthly_data = {}
@@ -1114,18 +1324,42 @@ class FinancialReportPage(QWidget):
             full_path = os.path.join(desktop_path, filename)
             wb.save(full_path)
 
-            show_messagebox(self, "موفقیت", f"فایل اکسل با موفقیت روی دسکتاپ ذخیره شد:\n{full_path}", QMessageBox.Information)
+            success_text = (
+                "<b style='color:green;'>موفقیت:</b><br>"
+                "فایل اکسل با موفقیت روی <b>دسکتاپ</b> ذخیره شد <br><br>"
+                f"<span style='color:#555;'>{full_path}</span>"
+            )
+
+            msgbox = QtWidgets.QMessageBox()
+            msgbox.setIcon(QtWidgets.QMessageBox.Information)
+            msgbox.setWindowTitle("ذخیره‌سازی موفق")
+            msgbox.setTextFormat(QtCore.Qt.RichText)
+            msgbox.setText(success_text)
+            msgbox.setStandardButtons(QtWidgets.QMessageBox.Ok)
+            msgbox.exec()
+
             if os.name == "posix":
                 subprocess.call(["open", full_path])
             elif os.name == "nt":
                 os.startfile(full_path)
 
         except Exception as e:
-            print("خطا:", str(e))
-            show_messagebox(self, "خطا", f"خطا در ذخیره فایل اکسل:\n{str(e)}", QMessageBox.Critical)
+            error_text = (
+                "<b style='color:#c00;'>خطا:</b><br>"
+                "در <b>ذخیره‌سازی فایل اکسل</b> مشکلی پیش آمد <br><br>"
+                f"<span style='color:#555;'>{str(e)}</span>"
+            )
+
+            msgbox = QtWidgets.QMessageBox()
+            msgbox.setIcon(QtWidgets.QMessageBox.Critical)
+            msgbox.setWindowTitle("خطای سیستم")
+            msgbox.setTextFormat(QtCore.Qt.RichText)
+            msgbox.setText(error_text)
+            msgbox.setStandardButtons(QtWidgets.QMessageBox.Ok)
+            msgbox.exec()
 
 
-class EventsPage(QtWidgets.QWidget):
+class EventsPage(QWidget):
     def __init__(self):
         super().__init__()
         uic.loadUi(resource_path("ui/events.ui"), self)
@@ -1322,23 +1556,67 @@ class EventsPage(QtWidgets.QWidget):
                 """, (date, category_id[0], amount, account_id[0], description, event_id))
 
         self.conn.commit()
-        QtWidgets.QMessageBox.information(self, "ذخیره تغییرات", "تغییرات با موفقیت ذخیره شد.")
+        success_text = (
+            "<b style='color:green;'>ذخیره تغییرات:</b><br>"
+            "<span style='color:#333;'>تغییرات با موفقیت ذخیره شد </span>"
+        )
+
+        msgbox = QtWidgets.QMessageBox()
+        msgbox.setIcon(QtWidgets.QMessageBox.Information)
+        msgbox.setWindowTitle("ذخیره موفق")
+        msgbox.setTextFormat(QtCore.Qt.RichText)
+        msgbox.setText(success_text)
+        msgbox.setStandardButtons(QtWidgets.QMessageBox.Ok)
+        msgbox.exec()
 
     def remove_selected_event(self):
         row = self.eventsTable.currentRow()
         print("Current row is:", self.eventsTable.currentRow())
         if row == -1:
-            QtWidgets.QMessageBox.warning(self, "هشدار", "لطفاً یک رویداد را انتخاب کنید.")
+            warning_text = (
+                "<b style='color:#f57c00;'>هشدار:</b><br>"
+                "<span style='color:#333;'>لطفاً یک <b>رویداد</b> را انتخاب کنید </span>"
+            )
+
+            msgbox = QtWidgets.QMessageBox()
+            msgbox.setIcon(QtWidgets.QMessageBox.Warning)
+            msgbox.setWindowTitle("هشدار")
+            msgbox.setTextFormat(QtCore.Qt.RichText)
+            msgbox.setText(warning_text)
+            msgbox.setStandardButtons(QtWidgets.QMessageBox.Ok)
+            msgbox.exec()
             return
 
         id_item = self.eventsTable.item(row, 0)
         if id_item is None:
-            QtWidgets.QMessageBox.warning(self, "خطا", "شناسهٔ رویداد یافت نشد.")
+            warning_text = (
+                "<b style='color:#c00;'>خطا:</b><br>"
+                "<span style='color:#333;'>شناسهٔ <b>رویداد</b> یافت نشد </span>"
+            )
+
+            msgbox = QtWidgets.QMessageBox()
+            msgbox.setIcon(QtWidgets.QMessageBox.Warning)
+            msgbox.setWindowTitle("خطا")
+            msgbox.setTextFormat(QtCore.Qt.RichText)
+            msgbox.setText(warning_text)
+            msgbox.setStandardButtons(QtWidgets.QMessageBox.Ok)
+            msgbox.exec()
             return
 
         event_id = id_item.text().strip()
         if not event_id:
-            QtWidgets.QMessageBox.warning(self, "خطا", "شناسهٔ رویداد نامعتبر است.")
+            warning_text = (
+                "<b style='color:#c00;'>خطا:</b><br>"
+                "<span style='color:#333;'>شناسهٔ <b>رویداد</b> نامعتبر است </span>"
+            )
+
+            msgbox = QtWidgets.QMessageBox()
+            msgbox.setIcon(QtWidgets.QMessageBox.Warning)
+            msgbox.setWindowTitle("خطا")
+            msgbox.setTextFormat(QtCore.Qt.RichText)
+            msgbox.setText(warning_text)
+            msgbox.setStandardButtons(QtWidgets.QMessageBox.Ok)
+            msgbox.exec()
             return
 
         confirm = QtWidgets.QMessageBox.question(
@@ -1352,9 +1630,275 @@ class EventsPage(QtWidgets.QWidget):
                 self.cursor.execute("DELETE FROM transactions WHERE id = ?", (event_id,))
                 self.conn.commit()
                 self.eventsTable.removeRow(row)
-                QtWidgets.QMessageBox.information(self, "موفقیت", "رویداد با موفقیت حذف شد.")
+
+                success_text = (
+                    "<b style='color:green;'>موفقیت:</b><br>"
+                    "<span style='color:#333;'>رویداد با موفقیت حذف شد </span>"
+                )
+
+                msgbox = QtWidgets.QMessageBox()
+                msgbox.setIcon(QtWidgets.QMessageBox.Information)
+                msgbox.setWindowTitle("حذف موفق")
+                msgbox.setTextFormat(QtCore.Qt.RichText)
+                msgbox.setText(success_text)
+                msgbox.setStandardButtons(QtWidgets.QMessageBox.Ok)
+                msgbox.exec()
+
             except Exception as e:
-                QtWidgets.QMessageBox.critical(self, "خطا", f"در حذف رویداد مشکلی پیش آمد:\n{e}")
+                error_text = (
+                    "<b style='color:#c00;'>خطا:</b><br>"
+                    "در <b>حذف رویداد</b> مشکلی پیش آمد <br><br>"
+                    f"<span style='color:#555;'>{str(e)}</span>"
+                )
+
+                msgbox = QtWidgets.QMessageBox()
+                msgbox.setIcon(QtWidgets.QMessageBox.Critical)
+                msgbox.setWindowTitle("خطای سیستم")
+                msgbox.setTextFormat(QtCore.Qt.RichText)
+                msgbox.setText(error_text)
+                msgbox.setStandardButtons(QtWidgets.QMessageBox.Ok)
+                msgbox.exec()
+
+
+class CategoriesPage(QWidget):
+    def __init__(self):
+        super().__init__()
+        uic.loadUi(resource_path("ui/categories.ui"), self)
+
+        self.conn = connect()
+        self.cursor = self.conn.cursor()
+        self.cursor.execute("PRAGMA foreign_keys = ON")
+
+        self.categoriesTable.setSelectionBehavior(QtWidgets.QTableView.SelectRows)
+        self.categoriesTable.setSelectionMode(QtWidgets.QAbstractItemView.SingleSelection)
+        self.categoriesTable.setEditTriggers(
+            QtWidgets.QAbstractItemView.DoubleClicked |
+            QtWidgets.QAbstractItemView.SelectedClicked
+        )
+
+        self.typeComboBox.addItems(["درآمد", "هزینه"])
+        self.typeComboBox.currentIndexChanged.connect(self.update_category_table)
+        self.categoryComboBox.currentTextChanged.connect(self.update_edit_button_state)
+        self.categoryComboBox.setEditable(True)
+
+        self.addButton.clicked.connect(self.add_category)
+        self.editButton.clicked.connect(self.edit_category)
+        self.removeButton.clicked.connect(self.remove_category)
+        self.backbutton.clicked.connect(self.close)
+
+        self.update_category_table()
+
+    def update_edit_button_state(self, text):
+        self.editButton.setEnabled(bool(text.strip()))
+
+    def update_category_table(self):
+        selected_type = self.typeComboBox.currentText().strip()
+        db_type = 'income' if selected_type == "درآمد" else "expense"
+
+        self.cursor.execute("SELECT id, name FROM categories WHERE type = ?", (db_type,))
+        rows = self.cursor.fetchall()
+
+        self.categoriesTable.setRowCount(len(rows))
+        self.categoriesTable.setColumnCount(2)
+        self.categoriesTable.setHorizontalHeaderLabels(["شناسه", "دسته‌بندی"])
+        self.categoriesTable.setLayoutDirection(QtCore.Qt.RightToLeft)
+
+        self.categoryComboBox.clear()
+
+        for i, row in enumerate(rows):
+            id_, name = row
+            self.categoryComboBox.addItem(name)
+
+            id_item = QtWidgets.QTableWidgetItem(str(id_))
+            name_item = QtWidgets.QTableWidgetItem(name)
+
+            id_item.setFlags(QtCore.Qt.ItemIsSelectable | QtCore.Qt.ItemIsEnabled)
+            id_item.setTextAlignment(QtCore.Qt.AlignCenter)
+            name_item.setTextAlignment(QtCore.Qt.AlignCenter)
+
+            self.categoriesTable.setItem(i, 0, id_item)
+            self.categoriesTable.setItem(i, 1, name_item)
+
+    def add_category(self):
+        name = self.categoryComboBox.currentText().strip()
+        if not name:
+            warning_text = (
+                "<b style='color:#c00;'>خطا:</b><br>"
+                "<span style='color:#333;'>نام <b>دسته‌بندی</b> نمی‌تواند خالی باشد </span>"
+            )
+
+            msgbox = QtWidgets.QMessageBox()
+            msgbox.setIcon(QtWidgets.QMessageBox.Warning)
+            msgbox.setWindowTitle("خطای ورودی")
+            msgbox.setTextFormat(QtCore.Qt.RichText)
+            msgbox.setText(warning_text)
+            msgbox.setStandardButtons(QtWidgets.QMessageBox.Ok)
+            msgbox.exec()
+            return
+
+        selected_type = self.typeComboBox.currentText().strip()
+        db_type = 'income' if selected_type == "درآمد" else "expense"
+
+        self.cursor.execute("SELECT id FROM categories WHERE name = ? AND type = ?", (name, db_type))
+        if self.cursor.fetchone():
+            info_text = (
+                "<b style='color:#f57c00;'>اطلاع:</b><br>"
+                "<span style='color:#333;'>این <b>دسته‌بندی</b> قبلاً ثبت شده است </span>"
+            )
+
+            msgbox = QtWidgets.QMessageBox()
+            msgbox.setIcon(QtWidgets.QMessageBox.Information)
+            msgbox.setWindowTitle("اطلاع‌رسانی")
+            msgbox.setTextFormat(QtCore.Qt.RichText)
+            msgbox.setText(info_text)
+            msgbox.setStandardButtons(QtWidgets.QMessageBox.Ok)
+            msgbox.exec()
+            return
+
+        self.cursor.execute("INSERT INTO categories (name, type) VALUES (?, ?)", (name, db_type))
+        self.conn.commit()
+        self.update_category_table()
+        success_text = (
+            "<b style='color:green;'>موفقیت:</b><br>"
+            "<span style='color:#333;'>دسته‌بندی با موفقیت اضافه شد </span>"
+        )
+
+        msgbox = QtWidgets.QMessageBox()
+        msgbox.setIcon(QtWidgets.QMessageBox.Information)
+        msgbox.setWindowTitle("ثبت موفق")
+        msgbox.setTextFormat(QtCore.Qt.RichText)
+        msgbox.setText(success_text)
+        msgbox.setStandardButtons(QtWidgets.QMessageBox.Ok)
+        msgbox.exec()
+
+    def edit_category(self):
+        row = self.categoriesTable.currentRow()
+        if row == -1:
+            warning_text = (
+                "<b style='color:#f57c00;'>هشدار:</b><br>"
+                "<span style='color:#333;'>لطفاً یک <b>دسته</b> را از جدول انتخاب کنید </span>"
+            )
+
+            msgbox = QtWidgets.QMessageBox()
+            msgbox.setIcon(QtWidgets.QMessageBox.Warning)
+            msgbox.setWindowTitle("هشدار")
+            msgbox.setTextFormat(QtCore.Qt.RichText)
+            msgbox.setText(warning_text)
+            msgbox.setStandardButtons(QtWidgets.QMessageBox.Ok)
+            msgbox.exec()
+            return
+
+        category_id_item = self.categoriesTable.item(row, 0)
+        name_item = self.categoriesTable.item(row, 1)
+
+        if not category_id_item or not name_item:
+            warning_text = (
+                "<b style='color:#d32f2f;'>خطا:</b><br>"
+                "<span style='color:#333;'>اطلاعات <b>دسته‌بندی</b> ناقص است. لطفاً همه فیلدها را کامل کنید </span>"
+            )
+
+            msgbox = QtWidgets.QMessageBox()
+            msgbox.setIcon(QtWidgets.QMessageBox.Warning)
+            msgbox.setWindowTitle("خطا")
+            msgbox.setTextFormat(QtCore.Qt.RichText)
+            msgbox.setText(warning_text)
+            msgbox.setStandardButtons(QtWidgets.QMessageBox.Ok)
+            msgbox.exec()
+            return
+
+        category_id = category_id_item.text().strip()
+        new_name = name_item.text().strip()
+
+        if not new_name:
+            warning_text = (
+                "<b style='color:#c62828;'>خطا:</b><br>"
+                "<span style='color:#444;'>نام <b>دسته‌بندی</b> نمی‌تواند <u>خالی</u> باشد. لطفاً یک نام معتبر وارد کنید </span>"
+            )
+
+            msgbox = QtWidgets.QMessageBox()
+            msgbox.setIcon(QtWidgets.QMessageBox.Warning)
+            msgbox.setWindowTitle("خطا")
+            msgbox.setTextFormat(QtCore.Qt.RichText)
+            msgbox.setText(warning_text)
+            msgbox.setStandardButtons(QtWidgets.QMessageBox.Ok)
+            msgbox.exec()
+            return
+
+        self.cursor.execute("UPDATE categories SET name = ? WHERE id = ?", (new_name, category_id))
+        self.conn.commit()
+        success_text = (
+            "<b style='color:#2e7d32;'>موفقیت </b><br>"
+            "<span style='color:#444;'>تغییرات <b>دسته‌بندی</b> با موفقیت ذخیره شد.</span>"
+        )
+
+        msgbox = QtWidgets.QMessageBox()
+        msgbox.setIcon(QtWidgets.QMessageBox.Information)
+        msgbox.setWindowTitle("موفقیت")
+        msgbox.setTextFormat(QtCore.Qt.RichText)
+        msgbox.setText(success_text)
+        msgbox.setStandardButtons(QtWidgets.QMessageBox.Ok)
+        msgbox.exec()
+        self.update_category_table()
+
+    def remove_category(self):
+        row = self.categoriesTable.currentRow()
+        if row == -1:
+            warning_text = (
+                "<b style='color:#c00;'>هشدار:</b><br>"
+                "لطفاً یک دسته‌بندی را انتخاب کنید<br><br>"
+            )
+            msgbox = QtWidgets.QMessageBox()
+            msgbox.setIcon(QtWidgets.QMessageBox.Warning)
+            msgbox.setWindowTitle("حذف دسته‌بندی و تراکنش‌ها")
+            msgbox.setTextFormat(QtCore.Qt.RichText)
+            msgbox.setText(warning_text)
+            msgbox.setStandardButtons(QtWidgets.QMessageBox.Ok)
+            msgbox.setDefaultButton(QtWidgets.QMessageBox.Ok)
+            msgbox.exec()
+            return
+
+        category_id = self.categoriesTable.item(row, 0).text()
+
+        warning_text = (
+            "<b style='color:#c00;'>هشدار:</b><br>"
+            "با حذف این دسته‌بندی، تمام تراکنش‌های مرتبط نیز حذف خواهند شد.<br><br>"
+            "<b>آیا از ادامه‌ی عملیات مطمئن هستید؟</b>"
+        )
+
+        msgbox = QtWidgets.QMessageBox()
+        msgbox.setIcon(QtWidgets.QMessageBox.Warning)
+        msgbox.setWindowTitle("حذف دسته‌بندی و تراکنش‌ها")
+        msgbox.setTextFormat(QtCore.Qt.RichText)
+        msgbox.setText(warning_text)
+        msgbox.setStandardButtons(QtWidgets.QMessageBox.Yes | QtWidgets.QMessageBox.No)
+        msgbox.setDefaultButton(QtWidgets.QMessageBox.No)
+        confirm = msgbox.exec()
+
+        if confirm == QtWidgets.QMessageBox.Yes:
+            from dbfunctions import remove_category
+            remove_category(category_id)
+            self.update_category_table()
+            
+            success_text = (
+                "<b'>موفقیت:</b><br>"
+                "دسته‌بندی و تراکنش‌های مرتبط با موفقیت حذف شدند.<br><br>"
+            )
+            
+            msgbox = QtWidgets.QMessageBox()
+            msgbox.setIcon(QtWidgets.QMessageBox.Information)
+            msgbox.setWindowTitle("نتیجه عملیات")
+            msgbox.setTextFormat(QtCore.Qt.RichText)
+            msgbox.setText(success_text)
+            msgbox.setStandardButtons(QtWidgets.QMessageBox.Ok)
+            msgbox.setDefaultButton(QtWidgets.QMessageBox.Ok)
+            msgbox.setStyleSheet("""
+                QMessageBox {
+                    color: white;
+                    font-family: 'Tahoma';
+                    font-size: 13px;
+                }
+            """)
+            msgbox.exec()
 
 
 if __name__ == '__main__':

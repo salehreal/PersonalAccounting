@@ -4,7 +4,10 @@ from datetime import datetime
 DB_NAME = 'accounting.db'
 
 def connect():
-    return sqlite3.connect(DB_NAME)
+    conn = sqlite3.connect(DB_NAME)
+    conn.execute("PRAGMA foreign_keys = ON")
+    return conn
+
 
 def create_tables():
     conn = connect()
@@ -42,7 +45,7 @@ def create_tables():
             category_id INTEGER NOT NULL,
             account_id INTEGER NOT NULL,
             description TEXT,
-            FOREIGN KEY (category_id) REFERENCES categories(id),
+            FOREIGN KEY (category_id) REFERENCES categories(id) ON DELETE CASCADE,
             FOREIGN KEY (account_id) REFERENCES accounts(id)
         )
     ''')
@@ -71,6 +74,18 @@ def add_category(name, type_):
     cursor.execute('INSERT INTO categories (name, type) VALUES (?, ?)', (name, type_))
     conn.commit()
     conn.close()
+
+def remove_category(category_id):
+    conn = connect()
+    cursor = conn.cursor()
+    try:
+        cursor.execute("DELETE FROM categories WHERE id = ?", (category_id,))
+        conn.commit()
+        print("✅ دسته و تراکنش‌های وابسته با موفقیت حذف شدند.")
+    except Exception as e:
+        print("❌ خطا در حذف:", e)
+    finally:
+        conn.close()
 
 def add_account(name):
     conn = connect()
@@ -123,7 +138,7 @@ def get_transactions():
     return result
 
 def get_user_fullname(id):
-    conn = sqlite3.connect("accounting.db")
+    conn = connect()
     cursor = conn.cursor()
     cursor.execute("SELECT fullname FROM users WHERE id = ?", (id,))
     result = cursor.fetchone()
