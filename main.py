@@ -5,8 +5,8 @@ from sms import send_sms
 from PyQt5.QtCore import QTimer, QDate, Qt
 from PyQt5.QtChart import QChart, QChartView, QPieSeries, QLineSeries, QCategoryAxis, QValueAxis
 from PyQt5.QtGui import QPainter, QPixmap, QColor, QFont
-from datetime import datetime, timedelta
-from dbfunctions import get_user_fullname, get_user_id_by_phone
+from datetime import datetime, timedelta, date
+from dbfunctions import get_user_fullname, get_user_id_by_phone, remove_category, connect
 import sys
 import re
 import os
@@ -17,11 +17,7 @@ import jdatetime
 import sqlite3
 from openpyxl import Workbook
 from openpyxl.styles import Alignment, Font
-from datetime import datetime, date
-from PyQt5.QtChart import QChart, QChartView, QPieSeries
 from dateutil.relativedelta import relativedelta
-from dbfunctions import remove_category
-from dbfunctions import connect
 
 
 def resource_path(relative_path):
@@ -263,7 +259,20 @@ class OtpPage(QWidget):
             window5.show()
             self.close()
         else:
-            self.confirmbutton.setText("کد نادرست")
+            error_text = (
+                "<b style='color:#c00;'>کد نادرست:</b><br>"
+                "<span style='color: #cccccc;'>کدی که وارد کرده‌اید معتبر نیست</span>"
+            )
+
+            msgbox = QtWidgets.QMessageBox()
+            msgbox.setIcon(QtWidgets.QMessageBox.Warning)
+            msgbox.setWindowTitle("خطا")
+            msgbox.setTextFormat(QtCore.Qt.RichText)
+            msgbox.setText(error_text)
+            msgbox.setStandardButtons(QtWidgets.QMessageBox.Ok)
+            msgbox.exec()
+
+            self.confirmbutton.setText("تأیید")
 
     def go_back(self):
         window3.show()
@@ -482,7 +491,7 @@ class AddEventPage(QWidget):
 
         success_text = (
             "<b style='color:green;'>ثبت شد:</b><br>"
-            "<span style='color:#333;'>رویداد با موفقیت ثبت شد ✅</span>"
+            "<span style='color: #cccccc;'>رویداد با موفقیت ثبت شد ✅</span>"
         )
 
         msgbox = QtWidgets.QMessageBox()
@@ -545,14 +554,14 @@ class AddAccountPage(QWidget):
         if result:
             info_text = (
                 "<b style='color:#f57c00;'>هشدار:</b><br>"
-                "<span style='color:#333;'>این حساب قبلاً ثبت شده است </span>"
+                "<span style='color: #cccccc;'>این حساب قبلاً ثبت شده است </span>"
             )
         else:
             cursor.execute("INSERT INTO accounts (name) VALUES (?)", (name,))
             conn.commit()
             info_text = (
                 "<b style='color:green;'>ثبت شد:</b><br>"
-                "<span style='color:#333;'>حساب جدید با موفقیت اضافه شد </span>"
+                "<span style='color: #cccccc;'>حساب جدید با موفقیت اضافه شد </span>"
             )
             self.accountLineEdit.clear()
             self.load_accounts()
@@ -599,14 +608,14 @@ class AddAccountPage(QWidget):
         if count > 0:
             error_text = (
                 "<b style='color:#c00;'>امکان حذف نیست:</b><br>"
-                "<span style='color:#333;'>این حساب در <b>تراکنش‌ها</b> استفاده شده و قابل حذف نیست </span>"
+                "<span style='color: #cccccc;'>این حساب در <b>تراکنش‌ها</b> استفاده شده و قابل حذف نیست </span>"
             )
         else:
             cursor.execute("DELETE FROM accounts WHERE name = ?", (account_name,))
             conn.commit()
             error_text = (
                 "<b style='color:green;'>حذف شد:</b><br>"
-                "<span style='color:#333;'>حساب با موفقیت حذف شد </span>"
+                "<span style='color: #cccccc;'>حساب با موفقیت حذف شد </span>"
             )
             self.load_accounts()
 
@@ -1154,7 +1163,7 @@ class FinancialReportPage(QWidget):
             if self.categoryTable.rowCount() == 0:
                 warning_text = (
                     "<b style='color:#f57c00;'>هشدار:</b><br>"
-                    "<span style='color:#333;'>ابتدا <b>گزارش‌گیری</b> کنید تا داده‌ها برای خروجی آماده شوند.</span> "
+                    "<span style='color: #cccccc;'>ابتدا <b>گزارش‌گیری</b> کنید تا داده‌ها برای خروجی آماده شوند.</span> "
                 )
 
                 msgbox = QtWidgets.QMessageBox()
@@ -1260,7 +1269,7 @@ class FinancialReportPage(QWidget):
             if self.categoryTable.rowCount() == 0:
                 warning_text = (
                     "<b style='color:#f57c00;'>هشدار:</b><br>"
-                    "<span style='color:#333;'>ابتدا <b>گزارش سالیانه</b> را تولید کنید. </span>"
+                    "<span style='color: #cccccc;'>ابتدا <b>گزارش سالیانه</b> را تولید کنید. </span>"
                 )
 
                 msgbox = QtWidgets.QMessageBox()
@@ -1558,7 +1567,7 @@ class EventsPage(QWidget):
         self.conn.commit()
         success_text = (
             "<b style='color:green;'>ذخیره تغییرات:</b><br>"
-            "<span style='color:#333;'>تغییرات با موفقیت ذخیره شد </span>"
+            "<span style='color: #cccccc;'>تغییرات با موفقیت ذخیره شد </span>"
         )
 
         msgbox = QtWidgets.QMessageBox()
@@ -1575,7 +1584,7 @@ class EventsPage(QWidget):
         if row == -1:
             warning_text = (
                 "<b style='color:#f57c00;'>هشدار:</b><br>"
-                "<span style='color:#333;'>لطفاً یک <b>رویداد</b> را انتخاب کنید </span>"
+                "<span style='color: #cccccc;'>لطفاً یک <b>رویداد</b> را انتخاب کنید </span>"
             )
 
             msgbox = QtWidgets.QMessageBox()
@@ -1591,7 +1600,7 @@ class EventsPage(QWidget):
         if id_item is None:
             warning_text = (
                 "<b style='color:#c00;'>خطا:</b><br>"
-                "<span style='color:#333;'>شناسهٔ <b>رویداد</b> یافت نشد </span>"
+                "<span style='color: #cccccc;'>شناسهٔ <b>رویداد</b> یافت نشد </span>"
             )
 
             msgbox = QtWidgets.QMessageBox()
@@ -1607,7 +1616,7 @@ class EventsPage(QWidget):
         if not event_id:
             warning_text = (
                 "<b style='color:#c00;'>خطا:</b><br>"
-                "<span style='color:#333;'>شناسهٔ <b>رویداد</b> نامعتبر است </span>"
+                "<span style='color: #cccccc;'>شناسهٔ <b>رویداد</b> نامعتبر است </span>"
             )
 
             msgbox = QtWidgets.QMessageBox()
@@ -1633,7 +1642,7 @@ class EventsPage(QWidget):
 
                 success_text = (
                     "<b style='color:green;'>موفقیت:</b><br>"
-                    "<span style='color:#333;'>رویداد با موفقیت حذف شد </span>"
+                    "<span style='color: #cccccc;'>رویداد با موفقیت حذف شد </span>"
                 )
 
                 msgbox = QtWidgets.QMessageBox()
@@ -1724,7 +1733,7 @@ class CategoriesPage(QWidget):
         if not name:
             warning_text = (
                 "<b style='color:#c00;'>خطا:</b><br>"
-                "<span style='color:#333;'>نام <b>دسته‌بندی</b> نمی‌تواند خالی باشد </span>"
+                "<span style='color: #cccccc;'>نام <b>دسته‌بندی</b> نمی‌تواند خالی باشد </span>"
             )
 
             msgbox = QtWidgets.QMessageBox()
@@ -1743,7 +1752,7 @@ class CategoriesPage(QWidget):
         if self.cursor.fetchone():
             info_text = (
                 "<b style='color:#f57c00;'>اطلاع:</b><br>"
-                "<span style='color:#333;'>این <b>دسته‌بندی</b> قبلاً ثبت شده است </span>"
+                "<span style='color: #cccccc;'>این <b>دسته‌بندی</b> قبلاً ثبت شده است </span>"
             )
 
             msgbox = QtWidgets.QMessageBox()
@@ -1760,7 +1769,7 @@ class CategoriesPage(QWidget):
         self.update_category_table()
         success_text = (
             "<b style='color:green;'>موفقیت:</b><br>"
-            "<span style='color:#333;'>دسته‌بندی با موفقیت اضافه شد </span>"
+            "<span style='color: #cccccc;'>دسته‌بندی با موفقیت اضافه شد </span>"
         )
 
         msgbox = QtWidgets.QMessageBox()
@@ -1776,7 +1785,7 @@ class CategoriesPage(QWidget):
         if row == -1:
             warning_text = (
                 "<b style='color:#f57c00;'>هشدار:</b><br>"
-                "<span style='color:#333;'>لطفاً یک <b>دسته</b> را از جدول انتخاب کنید </span>"
+                "<span style='color: #cccccc;'>لطفاً یک <b>دسته</b> را از جدول انتخاب کنید </span>"
             )
 
             msgbox = QtWidgets.QMessageBox()
@@ -1794,7 +1803,7 @@ class CategoriesPage(QWidget):
         if not category_id_item or not name_item:
             warning_text = (
                 "<b style='color:#d32f2f;'>خطا:</b><br>"
-                "<span style='color:#333;'>اطلاعات <b>دسته‌بندی</b> ناقص است. لطفاً همه فیلدها را کامل کنید </span>"
+                "<span style='color: #cccccc;'>اطلاعات <b>دسته‌بندی</b> ناقص است. لطفاً همه فیلدها را کامل کنید </span>"
             )
 
             msgbox = QtWidgets.QMessageBox()
@@ -1880,7 +1889,7 @@ class CategoriesPage(QWidget):
             self.update_category_table()
             
             success_text = (
-                "<b'>موفقیت:</b><br>"
+                "<b style='color:#2e7d32;'>موفقیت:</b><br>"
                 "دسته‌بندی و تراکنش‌های مرتبط با موفقیت حذف شدند.<br><br>"
             )
             
